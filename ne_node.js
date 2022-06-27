@@ -12,6 +12,10 @@ class NENode {
     draw() {
         this.graphics_node.draw()
     }
+
+    delete() {
+        // TODO
+    }
 }
 
 class NEGraphicsNode {
@@ -29,6 +33,19 @@ class NEGraphicsNode {
         this.title_padding = 5.0
 
         this.selected = false
+        this.initialselectionpos = {x: 0, y: 0}
+    }
+
+    select() {
+
+        this.selected = true
+        this.initialselectionpos.x = this.x
+        this.initialselectionpos.y = this.y
+    }
+
+    move(new_x, new_y) {
+        this.x = new_x + this.initialselectionpos.x
+        this.y = new_y + this.initialselectionpos.y
     }
 
     draw() {
