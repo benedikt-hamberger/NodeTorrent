@@ -5,8 +5,8 @@ class NEScene {
         this.ctx = ctx
 
         this.nodes = new Array()
-        this.ports = new Array()
-        this.connections = new Array()
+        // this.ports = new Array()
+        // this.connections = new Array()
 
         this.mousedownpos = { x:0, y:0 }
         this.mousepos = { x:0, y:0 }
@@ -15,6 +15,7 @@ class NEScene {
         this.currNodes = new Array()
 
         this.selectionmode = false
+        this.connectionmode = false
 
         this.curr_scale = 1.0
 
@@ -86,13 +87,13 @@ class NEScene {
             node.draw()
         }
 
-        for(var i = 0; i < this.ports.length; i++) {
-            var port = this.ports[i]
-        }
+        // for(var i = 0; i < this.ports.length; i++) {
+        //     var port = this.ports[i]
+        // }
 
-        for(var i = 0; i < this.connections.length; i++) {
-            var connection = this.connections[i]
-        }
+        // for(var i = 0; i < this.connections.length; i++) {
+        //     var connection = this.connections[i]
+        // }
 
         this.drawSelectionRect()
 
@@ -109,6 +110,31 @@ class NEScene {
 
             if (node.graphics_node.x < this.mousedownpos.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos.x){
                 if (node.graphics_node.y < this.mousedownpos.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos.y){
+                    
+                    // check for inputs
+                    for(var j = 0; j < node.inputs.length; j++) {
+                        var input = node.inputs[j]
+                        if (input.graphics_port.x - input.graphics_port.radius < this.mousedownpos.x && input.graphics_port.x + input.graphics_port.radius * 2 > this.mousedownpos.x){
+                            if (input.graphics_port.y - input.graphics_port.radius < this.mousedownpos.y && input.graphics_port.y + input.graphics_port.radius * 2 > this.mousedownpos.y){
+                                this.connectionmode = true
+
+                                return
+                            }
+                        }
+                    }
+
+                     // check for outputs
+                     for(var j = 0; j < node.outputs.length; j++) {
+                        var output = node.outputs[j]
+                        if (output.graphics_port.x - output.graphics_port.radius < this.mousedownpos.x && output.graphics_port.x + output.graphics_port.radius * 2 > this.mousedownpos.x){
+                            if (output.graphics_port.y - output.graphics_port.radius < this.mousedownpos.y && output.graphics_port.y + output.graphics_port.radius * 2 > this.mousedownpos.y){
+                                this.connectionmode = true
+
+                                return
+                            }
+                        }
+                    }
+
                     node.graphics_node.select.call(node.graphics_node)
                     this.currNodes.push(node)
                 }
@@ -132,6 +158,8 @@ class NEScene {
 
             this.selectionmode = false
         }
+
+        
 
 
         if (this.selectionmode) {
@@ -170,7 +198,7 @@ class NEScene {
         }
         this.draw()
         this.selectionmode = false
-        
+        this.connectionmode = false
     }
 
     mousemove(e) {

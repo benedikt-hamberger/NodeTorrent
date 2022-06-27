@@ -1,17 +1,37 @@
 class NENode {
-    constructor(scene, title, inputs, outputs) {
+    constructor(scene, title) {
         this.scene = scene
         this.title = title
 
-        this.inputs = inputs
-        this.outputs = outputs
+        this.inputs = new Array()
+        this.outputs = new Array()
 
         this.graphics_node = new NEGraphicsNode(scene, 20, 20)
         this.graphics_node.node = this
+
+        var test_input = new NEPort(this.scene, 1, this)
+        test_input.graphics_port.x_offset = this.graphics_node.x
+        test_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        this.inputs.push(test_input)
+
+        var test_output = new NEPort(this.scene, 1, this)
+        test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
+        test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2
+        this.outputs.push(test_output)
     }
 
     draw() {
         this.graphics_node.draw()
+
+        for(var i = 0; i < this.inputs.length; i++) {
+            var input = this.inputs[i]
+            input.draw()
+        }
+
+        for(var i = 0; i < this.outputs.length; i++) {
+            var output = this.outputs[i]
+            output.draw()
+        }
     }
 
     delete() {
@@ -48,6 +68,16 @@ class NEGraphicsNode {
     move(new_x, new_y) {
         this.x = new_x + this.initialselectionpos.x
         this.y = new_y + this.initialselectionpos.y
+
+        for(var i = 0; i < this.node.inputs.length; i++) {
+            var input = this.node.inputs[i]
+            input.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
+        }
+
+        for(var i = 0; i < this.node.outputs.length; i++) {
+            var output = this.node.outputs[i]
+            output.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
+        }
     }
 
     draw() {
@@ -91,6 +121,7 @@ class NEGraphicsNode {
 
         // draw outline
 
+        ctx.lineWidth = 1
         ctx.beginPath();
         ctx.moveTo(this.x + this.width - this.border_radius, this.y + this.height)
         ctx.arcTo(this.x, this.y + this.height, this.x, this.y, this.border_radius)
