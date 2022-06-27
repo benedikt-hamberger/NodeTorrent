@@ -16,12 +16,15 @@ class NEScene {
 
         this.selectionmode = false
 
+        this.curr_scale = 1.0
+
         
 
         canvas.onmousedown = (e) => {that.mousedown(e)}
         canvas.onmouseup = (e) => {that.mouseup(e)}
         canvas.onmousemove = (e) => {that.mousemove(e)}
         canvas.onkeydown = (e) => {that.keydown(e)}
+        canvas.onwheel = (e) => {that.mousewheel(e)}
     }
 
     drawSelectionRect() {
@@ -38,7 +41,7 @@ class NEScene {
 
         // minor grid 
         this.ctx.beginPath();
-        var minor_grid_spacing = 40
+        var minor_grid_spacing = 50
         var padding = 0
         this.ctx.lineWidth = 1
         for (var x = 0; x <= this.canvas.width; x += minor_grid_spacing) {
@@ -55,7 +58,7 @@ class NEScene {
 
         // major grid 
         this.ctx.beginPath();
-        var major_grid_spacing = 200
+        var major_grid_spacing = minor_grid_spacing * 5
         var padding = 0
         this.ctx.lineWidth = 2
         for (var x = 0; x <= this.canvas.width; x += major_grid_spacing) {
@@ -130,7 +133,7 @@ class NEScene {
             this.selectionmode = false
         }
 
-        
+
         if (this.selectionmode) {
             // rectangle select
             this.selectionrange.width = (e.layerX - this.canvas.offsetLeft) - this.mousedownpos.x
@@ -214,5 +217,16 @@ class NEScene {
             this.draw()
             
         }
+    }
+
+    mousewheel(e) {
+        // console.log(e.deltaY)
+        // this.curr_scale *= 1.0 + (e.deltaY / 102.0) / 5.0
+        // console.log(this.curr_scale)
+        // // this.ctx.scale(this.curr_scale, this.curr_scale)
+        // this.ctx.scale(1.0 + (e.deltaY / 102.0) / 5.0, 1.0 + (e.deltaY / 102.0) / 5.0)
+        // e.preventDefault()
+
+        // this.draw()
     }
 }

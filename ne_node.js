@@ -7,6 +7,7 @@ class NENode {
         this.outputs = outputs
 
         this.graphics_node = new NEGraphicsNode(scene, 20, 20)
+        this.graphics_node.node = this
     }
 
     draw() {
@@ -24,6 +25,7 @@ class NEGraphicsNode {
         this.scene = scene
         this.x = x
         this.y = y
+        this.node = null
 
         this.width = 240
         this.height = 100
@@ -50,7 +52,8 @@ class NEGraphicsNode {
 
     draw() {
         var ctx = this.scene.ctx
-        // draw tite
+
+        // draw head
 
         var title_gradient = ctx.createLinearGradient(20, 100, 150, 127)
         title_gradient.addColorStop(0, '#BB3131AF')
@@ -64,6 +67,12 @@ class NEGraphicsNode {
         ctx.arcTo(this.x + this.width, this.y, this.x + this.width, this.y + this.title_height, this.border_radius)
         ctx.fillStyle = title_gradient;
         ctx.fill();
+
+        // draw title
+
+        ctx.font = "18px Arial";
+        ctx.fillStyle = '#DDDDDD';
+        ctx.fillText(this.node.title, this.x + this.title_padding, this.y - this.title_padding + this.title_height)
         
         // draw body
 
