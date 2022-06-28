@@ -13,10 +13,9 @@ class NEScene {
         this.canvas = canvas
         this.ctx = ctx
 
-        this.nodes = new Array()
-        // this.ports = new Array()
-        // this.connections = new Array()
+        this.mode = Mode.None
 
+        
         this.mousedownpos_screen = { x:0, y:0 }
         this.mousedownpos_world = { x:0, y:0 }
         this.mousepos_screen = { x:0, y:0 }
@@ -24,11 +23,16 @@ class NEScene {
 
         this.selectionrange = {x: 0, x: 0, width: 0, height: 0}
 
-        this.currNodes = new Array()
-
-        this.mode = Mode.None
-
         this.curr_scale = 1.0
+
+
+
+        this.nodes = new Array()
+        this.ports = new Array()
+        this.connections = new Array()
+
+        this.currNodes = new Array()
+        this.currConnections = new Array()
 
 
         canvas.onmousedown = (e) => {that.mousedown(e)}
@@ -81,7 +85,8 @@ class NEScene {
         this.ctx.stroke();
     }
 
-    draw() {
+    //updates the scene(canvas) every frame if needed
+    update() {
 
         // clear canvas
         this.ctx.save();
@@ -126,46 +131,50 @@ class NEScene {
         // left mouse button down
         if(e.buttons === 1) {
 
-            for(var i = 0; i < this.nodes.length; i++) {
-                var node = this.nodes[i]
-    
-                if (node.graphics_node.x < this.mousedownpos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos_world.x){
-                    if (node.graphics_node.y < this.mousedownpos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos_world.y){
-                        
-                        // check for inputs
-                        for(var j = 0; j < node.inputs.length; j++) {
-                            var input = node.inputs[j]
-                            if (input.graphics_port.x - input.graphics_port.radius < this.mousedownpos_world.x && input.graphics_port.x + input.graphics_port.radius * 2 > this.mousedownpos_world.x){
-                                if (input.graphics_port.y - input.graphics_port.radius < this.mousedownpos_world.y && input.graphics_port.y + input.graphics_port.radius * 2 > this.mousedownpos_world.y){
-                                    this.mode = Mode.Select
-                                    return
+            if (this.mode === Mode.None){
+
+                for(var i = 0; i < this.nodes.length; i++) {
+                    var node = this.nodes[i]
+        
+                    if (node.graphics_node.x < this.mousedownpos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos_world.x){
+                        if (node.graphics_node.y < this.mousedownpos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos_world.y){
+                            
+                            // check for inputs
+                            for(var j = 0; j < node.inputs.length; j++) {
+                                var input = node.inputs[j]
+                                if (input.graphics_port.x - input.graphics_port.radius < this.mousedownpos_world.x && input.graphics_port.x + input.graphics_port.radius * 2 > this.mousedownpos_world.x){
+                                    if (input.graphics_port.y - input.graphics_port.radius < this.mousedownpos_world.y && input.graphics_port.y + input.graphics_port.radius * 2 > this.mousedownpos_world.y){
+                                        this.mode = Mode.Connect
+                                        this.currConnections.push(new NEConnection())
+                                        return
+                                    }
                                 }
                             }
-                        }
-    
-                         // check for outputs
-                         for(var j = 0; j < node.outputs.length; j++) {
-                            var output = node.outputs[j]
-                            if (output.graphics_port.x - output.graphics_port.radius < this.mousedownpos_world.x && output.graphics_port.x + output.graphics_port.radius * 2 > this.mousedownpos_world.x){
-                                if (output.graphics_port.y - output.graphics_port.radius < this.mousedownpos_world.y && output.graphics_port.y + output.graphics_port.radius * 2 > this.mousedownpos_world.y){
-                                    this.mode = Mode.Select
-                                    return
+        
+                             // check for outputs
+                             for(var j = 0; j < node.outputs.length; j++) {
+                                var output = node.outputs[j]
+                                if (output.graphics_port.x - output.graphics_port.radius < this.mousedownpos_world.x && output.graphics_port.x + output.graphics_port.radius * 2 > this.mousedownpos_world.x){
+                                    if (output.graphics_port.y - output.graphics_port.radius < this.mousedownpos_world.y && output.graphics_port.y + output.graphics_port.radius * 2 > this.mousedownpos_world.y){
+                                        this.mode = Mode.Connect
+                                        return
+                                    }
                                 }
                             }
+        
+                            node.graphics_node.select.call(node.graphics_node)
+                            this.currNodes.push(node)
                         }
-    
-                        node.graphics_node.select.call(node.graphics_node)
-                        this.currNodes.push(node)
                     }
                 }
-            }
-    
-            if (this.currNodes.length == 0) {
-                this.mode = Mode.Select
-                this.selectionrange = {x: this.mousedownpos_world.x, y: this.mousedownpos_world.y, width: 0, height: 0}
-            }
-            else {
-                this.mode = Mode.None
+        
+                if (this.currNodes.length == 0) {
+                    this.mode = Mode.Select
+                    this.selectionrange = {x: this.mousedownpos_world.x, y: this.mousedownpos_world.y, width: 0, height: 0}
+                }
+                else {
+                    this.mode = Mode.None
+                }
             }
         }
         
@@ -185,8 +194,8 @@ class NEScene {
             Math.abs((e.layerY - this.canvas.offsetTop) - this.mousedownpos_screen.y) < 10) {
 
                 this.mode = Mode.ContextMenu
-                console.log("context menu")
-                this.draw()
+                alert("context menu")
+                this.update()
             }
         }
 
@@ -228,7 +237,7 @@ class NEScene {
             }
         }
 
-        this.draw()
+        this.update()
         this.mode = Mode.None
 
     }
@@ -239,7 +248,7 @@ class NEScene {
         this.mousepos_screen = {x: e.clientX - this.canvas.offsetLeft, y: e.clientY - this.canvas.offsetTop}
         
         if (this.mode === Mode.Select) {
-             this.draw()
+             this.update()
         }
 
         if (this.mode === Mode.None) {
@@ -256,7 +265,7 @@ class NEScene {
             }
     
             if (this.currNodes.length > 0) {
-                this.draw()
+                this.update()
             }
         }
 
@@ -276,7 +285,7 @@ class NEScene {
 
             this.mousedownpos_world = this.mousepos_world
             this.mousedownpos_screen = this.mousepos_screen
-            this.draw()
+            this.update()
         }
         
     }
@@ -297,7 +306,7 @@ class NEScene {
             this.currNodes = new Array()
 
             this.mode = Mode.None
-            this.draw()
+            this.update()
             
         }
     }
@@ -309,6 +318,6 @@ class NEScene {
         this.ctx.scale(1.0 + (e.deltaY / 102.0) / 5.0, 1.0 + (e.deltaY / 102.0) / 5.0)
         e.preventDefault()
 
-        this.draw()
+        this.update()
     }
 }

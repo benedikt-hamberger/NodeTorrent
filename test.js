@@ -8,11 +8,12 @@ var scene = new NEScene(canvas, ctx)
 
 var node = new NENode(scene, "MyNode")
 var node2 = new NENode(scene, "TestNode")
-node2.graphics_node.x = 300
+node.graphics_node.move(0, 0)
+node2.graphics_node.move(300, 0)
 scene.nodes.push(node)
 scene.nodes.push(node2)
 
-scene.draw()
+scene.update()
 
 
 // make key down work on scene
