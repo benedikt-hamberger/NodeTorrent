@@ -5,12 +5,13 @@ var canvas = document.getElementById("myCanvas")
 var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
-var node = new NENode(scene, "MyNode")
 
+var node = new NENode(scene, "MyNode")
 var node2 = new NENode(scene, "TestNode")
 node2.graphics_node.x = 300
 scene.nodes.push(node)
 scene.nodes.push(node2)
+
 scene.draw()
 
 
@@ -20,8 +21,12 @@ window.onload = function() {
 
     lastDownTarget = null 
 
+    // prevent default right click menu
+    canvas.addEventListener('contextmenu', (e) => {e.preventDefault()});
+
     document.addEventListener('mousedown', function(event) {
         lastDownTarget = event.target;
+        event.preventDefault()
     }, false);
 
     document.addEventListener('keydown', function(event) {

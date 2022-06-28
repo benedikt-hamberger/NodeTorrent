@@ -1,3 +1,12 @@
+const Mode = {
+    None: 1,
+    Select: 2,
+    Connect: 3,
+    PendingMove: 4,
+    Move: 5,
+    ContextMenu: 6
+}
+
 class NEScene {
     constructor(canvas, ctx) {
         var that = this
@@ -8,18 +17,19 @@ class NEScene {
         // this.ports = new Array()
         // this.connections = new Array()
 
-        this.mousedownpos = { x:0, y:0 }
-        this.mousepos = { x:0, y:0 }
+        this.mousedownpos_screen = { x:0, y:0 }
+        this.mousedownpos_world = { x:0, y:0 }
+        this.mousepos_screen = { x:0, y:0 }
+        this.mousepos_world = { x:0, y:0 }
+
         this.selectionrange = {x: 0, x: 0, width: 0, height: 0}
 
         this.currNodes = new Array()
 
-        this.selectionmode = false
-        this.connectionmode = false
+        this.mode = Mode.None
 
         this.curr_scale = 1.0
 
-        
 
         canvas.onmousedown = (e) => {that.mousedown(e)}
         canvas.onmouseup = (e) => {that.mouseup(e)}
@@ -28,57 +38,63 @@ class NEScene {
         canvas.onwheel = (e) => {that.mousewheel(e)}
     }
 
+    toWorld(x,y){
+        var matrix = this.ctx.getTransform()
+        var imatrix = matrix.invertSelf();         // invert
+
+        // apply to point:
+        return { x :x * imatrix.a + y * imatrix.c + imatrix.e,
+                 y :x * imatrix.b + y * imatrix.d + imatrix.f }
+    }
+
     drawSelectionRect() {
-        if (this.selectionmode) {
+        if (this.mode == Mode.Select) {
             this.ctx.fillStyle = "#00AACC55";
-            this.ctx.fillRect(this.mousedownpos.x, this.mousedownpos.y, this.mousepos.x - this.mousedownpos.x, this.mousepos.y - this.mousedownpos.y)
+            this.ctx.fillRect(this.mousedownpos_world.x, this.mousedownpos_world.y, this.mousepos_world.x - this.mousedownpos_world.x, this.mousepos_world.y - this.mousedownpos_world.y)
             
             this.ctx.strokeStyle = "#0088DD77";
-            this.ctx.strokeRect(this.mousedownpos.x, this.mousedownpos.y, this.mousepos.x - this.mousedownpos.x, this.mousepos.y - this.mousedownpos.y)
+            this.ctx.strokeRect(this.mousedownpos_world.x, this.mousedownpos_world.y, this.mousepos_world.x - this.mousedownpos_world.x, this.mousepos_world.y - this.mousedownpos_world.y)
         }
     }
 
     drawGrid() {
 
         // minor grid 
-        this.ctx.beginPath();
-        var minor_grid_spacing = 50
-        var padding = 0
-        this.ctx.lineWidth = 1
-        for (var x = 0; x <= this.canvas.width; x += minor_grid_spacing) {
-            this.ctx.moveTo(0.5 + x + padding, padding);
-            this.ctx.lineTo(0.5 + x + padding, this.canvas.height + padding);
-        }
-    
-        for (var x = 0; x <= this.canvas.height; x += minor_grid_spacing) {
-            this.ctx.moveTo(padding, 0.5 + x + padding);
-            this.ctx.lineTo(this.canvas.width + padding, 0.5 + x + padding);
-        }
-        this.ctx.strokeStyle = "#292929AA";
-        this.ctx.stroke();
+        let minor_grid_size = 50
+        let left = 0.5 - Math.ceil(this.canvas.width / 2)
+        let top = 0.5 - Math.ceil(this.canvas.height / 2)
+        let right = this.canvas.width * 2;
+        let bottom = this.canvas.height * 2;
 
-        // major grid 
         this.ctx.beginPath();
-        var major_grid_spacing = minor_grid_spacing * 5
-        var padding = 0
-        this.ctx.lineWidth = 2
-        for (var x = 0; x <= this.canvas.width; x += major_grid_spacing) {
-            this.ctx.moveTo(0.5 + x + padding, padding);
-            this.ctx.lineTo(0.5 + x + padding, this.canvas.height + padding);
+        this.ctx.strokeStyle = "#292929AA";
+        this.ctx.lineWidth = 1
+
+        for (let x = left; x < right; x += minor_grid_size) {
+            this.ctx.moveTo(x, top);
+            this.ctx.lineTo(x, bottom);
         }
-    
-        for (var x = 0; x <= this.canvas.height; x += major_grid_spacing) {
-            this.ctx.moveTo(padding, 0.5 + x + padding);
-            this.ctx.lineTo(this.canvas.width + padding, 0.5 + x + padding);
+        for (let y = top; y < bottom; y += minor_grid_size) {
+            this.ctx.moveTo(left, y);
+            this.ctx.lineTo(right, y);
         }
-        this.ctx.strokeStyle = "#2F2F2FAA";
         this.ctx.stroke();
     }
 
     draw() {
 
         // clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+        this.ctx.save();
+        this.ctx.setTransform(1,0,0,1,0,0);
+        // Will always clear the right space
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        
+        this.ctx.restore();
+
+        this.drawSelectionRect()
+
+        // var m = matrix;
+        // ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
 
         this.drawGrid()
 
@@ -95,77 +111,89 @@ class NEScene {
         //     var connection = this.connections[i]
         // }
 
-        this.drawSelectionRect()
+        
+
+        
 
     }
 
     mousedown(e) {
 
         // store mousedownpos
-        this.mousedownpos.x = e.layerX - this.canvas.offsetLeft
-        this.mousedownpos.y = e.layerY - this.canvas.offsetTop
+        this.mousedownpos_screen = {x: e.clientX - this.canvas.offsetLeft, y: e.clientY - this.canvas.offsetTop}
+        this.mousedownpos_world = this.toWorld(e.clientX - this.canvas.offsetLeft, e.clientY - this.canvas.offsetTop)
 
-        for(var i = 0; i < this.nodes.length; i++) {
-            var node = this.nodes[i]
+        // left mouse button down
+        if(e.buttons === 1) {
 
-            if (node.graphics_node.x < this.mousedownpos.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos.x){
-                if (node.graphics_node.y < this.mousedownpos.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos.y){
-                    
-                    // check for inputs
-                    for(var j = 0; j < node.inputs.length; j++) {
-                        var input = node.inputs[j]
-                        if (input.graphics_port.x - input.graphics_port.radius < this.mousedownpos.x && input.graphics_port.x + input.graphics_port.radius * 2 > this.mousedownpos.x){
-                            if (input.graphics_port.y - input.graphics_port.radius < this.mousedownpos.y && input.graphics_port.y + input.graphics_port.radius * 2 > this.mousedownpos.y){
-                                this.connectionmode = true
-
-                                return
+            for(var i = 0; i < this.nodes.length; i++) {
+                var node = this.nodes[i]
+    
+                if (node.graphics_node.x < this.mousedownpos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos_world.x){
+                    if (node.graphics_node.y < this.mousedownpos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos_world.y){
+                        
+                        // check for inputs
+                        for(var j = 0; j < node.inputs.length; j++) {
+                            var input = node.inputs[j]
+                            if (input.graphics_port.x - input.graphics_port.radius < this.mousedownpos_world.x && input.graphics_port.x + input.graphics_port.radius * 2 > this.mousedownpos_world.x){
+                                if (input.graphics_port.y - input.graphics_port.radius < this.mousedownpos_world.y && input.graphics_port.y + input.graphics_port.radius * 2 > this.mousedownpos_world.y){
+                                    this.mode = Mode.Select
+                                    return
+                                }
                             }
                         }
-                    }
-
-                     // check for outputs
-                     for(var j = 0; j < node.outputs.length; j++) {
-                        var output = node.outputs[j]
-                        if (output.graphics_port.x - output.graphics_port.radius < this.mousedownpos.x && output.graphics_port.x + output.graphics_port.radius * 2 > this.mousedownpos.x){
-                            if (output.graphics_port.y - output.graphics_port.radius < this.mousedownpos.y && output.graphics_port.y + output.graphics_port.radius * 2 > this.mousedownpos.y){
-                                this.connectionmode = true
-
-                                return
+    
+                         // check for outputs
+                         for(var j = 0; j < node.outputs.length; j++) {
+                            var output = node.outputs[j]
+                            if (output.graphics_port.x - output.graphics_port.radius < this.mousedownpos_world.x && output.graphics_port.x + output.graphics_port.radius * 2 > this.mousedownpos_world.x){
+                                if (output.graphics_port.y - output.graphics_port.radius < this.mousedownpos_world.y && output.graphics_port.y + output.graphics_port.radius * 2 > this.mousedownpos_world.y){
+                                    this.mode = Mode.Select
+                                    return
+                                }
                             }
                         }
+    
+                        node.graphics_node.select.call(node.graphics_node)
+                        this.currNodes.push(node)
                     }
-
-                    node.graphics_node.select.call(node.graphics_node)
-                    this.currNodes.push(node)
                 }
             }
+    
+            if (this.currNodes.length == 0) {
+                this.mode = Mode.Select
+                this.selectionrange = {x: this.mousedownpos_world.x, y: this.mousedownpos_world.y, width: 0, height: 0}
+            }
+            else {
+                this.mode = Mode.None
+            }
+        }
+        
+        // right mouse button down
+        if (e.buttons === 2) {
+            this.mode = Mode.PendingMove
         }
 
-        if (this.currNodes.length == 0) {
-            this.selectionmode = true
-            this.selectionrange = {x: this.mousedownpos.x, y: this.mousedownpos.y, width: 0, height: 0}
-        }
-        else {
-            this.selectionmode = false
-        }
     }
 
     mouseup(e) {
 
-        // check if moved
-        if (Math.abs((e.layerX - this.canvas.offsetLeft) - this.mousedownpos.x) < 10 &&
-        Math.abs((e.layerY - this.canvas.offsetTop) - this.mousedownpos.y) < 10) {
+        if (this.mode === Mode.PendingMove)
+        {
+            // check if moved
+            if (Math.abs((e.layerX - this.canvas.offsetLeft) - this.mousedownpos_screen.x) < 10 &&
+            Math.abs((e.layerY - this.canvas.offsetTop) - this.mousedownpos_screen.y) < 10) {
 
-            this.selectionmode = false
+                this.mode = Mode.ContextMenu
+                console.log("context menu")
+                this.draw()
+            }
         }
 
-        
-
-
-        if (this.selectionmode) {
+        if (this.mode === Mode.Select) {
             // rectangle select
-            this.selectionrange.width = (e.layerX - this.canvas.offsetLeft) - this.mousedownpos.x
-            this.selectionrange.height = (e.layerY - this.canvas.offsetTop) - this.mousedownpos.y
+            this.selectionrange.width = ((e.layerX - this.canvas.offsetLeft) - this.mousedownpos_world.x) / this.curr_scale
+            this.selectionrange.height = ((e.layerY - this.canvas.offsetTop) - this.mousedownpos_world.y) / this.curr_scale
             
             for(var i = 0; i < this.nodes.length; i++) {
                 var node = this.nodes[i]
@@ -180,10 +208,16 @@ class NEScene {
                 }
             }
             
-            this.mousedownpos.x = e.layerX - this.canvas.offsetLeft
-            this.mousedownpos.y = e.layerY - this.canvas.offsetTop
+            // store mousedownpos
+            this.mousedownpos_screen = {x: e.clientX - this.canvas.offsetLeft, y: e.clientY - this.canvas.offsetTop}
+            this.mousedownpos_world = this.toWorld(e.clientX - this.canvas.offsetLeft, e.clientY - this.canvas.offsetTop)
+
+
+            if ( this.currNodes.length === 0){
+                this.mode = Mode.None
+            }
         }
-        else {
+        if (this.mode === Mode.None) {
 
             if (this.currNodes.length > 0) {
                 for(var i = 0; i < this.currNodes.length; i++) {
@@ -191,22 +225,24 @@ class NEScene {
                     node.graphics_node.selected = false
                 }
                 this.currNodes = new Array()
-    
-                
             }
-
         }
+
         this.draw()
-        this.selectionmode = false
-        this.connectionmode = false
+        this.mode = Mode.None
+
     }
 
     mousemove(e) {
-        if (this.selectionmode) {
-            this.mousepos = {x: e.layerX - this.canvas.offsetLeft, y: e.layerY - this.canvas.offsetTop}
-            this.draw()
+
+        this.mousepos_world = this.toWorld(e.clientX - this.canvas.offsetLeft, e.clientY - this.canvas.offsetTop)
+        this.mousepos_screen = {x: e.clientX - this.canvas.offsetLeft, y: e.clientY - this.canvas.offsetTop}
+        
+        if (this.mode === Mode.Select) {
+             this.draw()
         }
-        else {
+
+        if (this.mode === Mode.None) {
             if (this.currNodes.length > 0) {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
             }
@@ -214,14 +250,33 @@ class NEScene {
             for(var i = 0; i < this.currNodes.length; i++) {
                 var node = this.currNodes[i]
                 node.graphics_node.move(
-                    e.layerX - this.canvas.offsetLeft - this.mousedownpos.x
-                    ,e.layerY - this.canvas.offsetTop - this.mousedownpos.y
+                    this.mousepos_world.x - this.mousedownpos_world.x
+                    ,this.mousepos_world.y - this.mousedownpos_world.y
                 )
             }
     
             if (this.currNodes.length > 0) {
                 this.draw()
             }
+        }
+
+        if (this.mode === Mode.PendingMove) {
+            // check if moved a bit
+            if (Math.abs(this.mousepos_screen.x - this.mousedownpos_screen.x) < 10 &&
+             Math.abs(this.mousepos_screen.y - this.mousedownpos_screen.y) < 10) {
+     
+                 this.mode = Mode.Move
+             }
+        }
+
+        if (this.mode === Mode.Move) {
+            var deltaX = (this.mousepos_screen.x - this.mousedownpos_screen.x) * 1.0 / this.curr_scale
+            var deltaY = (this.mousepos_screen.y - this.mousedownpos_screen.y) * 1.0 / this.curr_scale
+            this.ctx.translate(deltaX, deltaY)
+
+            this.mousedownpos_world = this.mousepos_world
+            this.mousedownpos_screen = this.mousepos_screen
+            this.draw()
         }
         
     }
@@ -241,20 +296,19 @@ class NEScene {
 
             this.currNodes = new Array()
 
-            this.selectionmode = false
+            this.mode = Mode.None
             this.draw()
             
         }
     }
 
     mousewheel(e) {
-        // console.log(e.deltaY)
-        // this.curr_scale *= 1.0 + (e.deltaY / 102.0) / 5.0
+        this.curr_scale *= 1.0 + (e.deltaY / 102.0) / 5.0
         // console.log(this.curr_scale)
-        // // this.ctx.scale(this.curr_scale, this.curr_scale)
-        // this.ctx.scale(1.0 + (e.deltaY / 102.0) / 5.0, 1.0 + (e.deltaY / 102.0) / 5.0)
-        // e.preventDefault()
+        // this.ctx.scale(this.curr_scale, this.curr_scale)
+        this.ctx.scale(1.0 + (e.deltaY / 102.0) / 5.0, 1.0 + (e.deltaY / 102.0) / 5.0)
+        e.preventDefault()
 
-        // this.draw()
+        this.draw()
     }
 }
