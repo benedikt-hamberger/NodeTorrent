@@ -3,39 +3,41 @@ class NENode {
         this.scene = scene
         this.title = title
 
-        this.inputs = new Array()
-        this.outputs = new Array()
+        this.ports = new Array()
 
         this.graphics_node = new NEGraphicsNode(scene, 20, 20)
         this.graphics_node.node = this
 
-        var test_input = new NEPort(this.scene, 1, this)
+        var test_input = new NEPort(this.scene, this, 1, false)
         test_input.graphics_port.x_offset = this.graphics_node.x
         test_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
-        this.inputs.push(test_input)
+        this.ports.push(test_input)
 
-        var test_output = new NEPort(this.scene, 1, this)
+        var test_output = new NEPort(this.scene, this, 1, true)
         test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
-        test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2
-        this.outputs.push(test_output)
+        test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        this.ports.push(test_output)
+
+        var test_output = new NEPort(this.scene, this, 2, true)
+        test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
+        test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2.5
+        this.ports.push(test_output)
     }
 
     draw() {
         this.graphics_node.draw()
 
-        for(var i = 0; i < this.inputs.length; i++) {
-            var input = this.inputs[i]
+        for(var i = 0; i < this.ports.length; i++) {
+            var input = this.ports[i]
             input.draw()
         }
 
-        for(var i = 0; i < this.outputs.length; i++) {
-            var output = this.outputs[i]
-            output.draw()
-        }
     }
 
     delete() {
-        // TODO
+        for (var i = 0; i < this.ports.length; i++){
+            this.ports[i].delete()
+        }
     }
 }
 
@@ -69,15 +71,11 @@ class NEGraphicsNode {
         this.x = new_x + this.initialselectionpos.x
         this.y = new_y + this.initialselectionpos.y
 
-        for(var i = 0; i < this.node.inputs.length; i++) {
-            var input = this.node.inputs[i]
+        for(var i = 0; i < this.node.ports.length; i++) {
+            var input = this.node.ports[i]
             input.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
         }
 
-        for(var i = 0; i < this.node.outputs.length; i++) {
-            var output = this.node.outputs[i]
-            output.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
-        }
     }
 
     draw() {

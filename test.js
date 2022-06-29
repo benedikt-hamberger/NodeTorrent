@@ -1,4 +1,10 @@
 
+const Colors = {
+    1: "#EE8800",
+    2: "#0088EE",
+    3: "#0000FF"
+}
+
 
 // get canvas and context
 var canvas = document.getElementById("myCanvas")
@@ -7,11 +13,16 @@ var ctx = canvas.getContext("2d")
 var scene = new NEScene(canvas, ctx)
 
 var node = new NENode(scene, "MyNode")
-var node2 = new NENode(scene, "TestNode")
 node.graphics_node.move(0, 0)
-node2.graphics_node.move(300, 0)
 scene.nodes.push(node)
+
+var node2 = new NENode(scene, "TestNode")
+node2.graphics_node.move(300, 0)
 scene.nodes.push(node2)
+
+var node3 = new NENode(scene, "ABC")
+node3.graphics_node.move(600, 200)
+scene.nodes.push(node3)
 
 scene.update()
 

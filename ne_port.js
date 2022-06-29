@@ -1,15 +1,29 @@
 class NEPort {
-    constructor(scene, type, node) {
+    constructor(scene, node, type, output) {
         this.that = this
         this.scene = scene
         this.type = type
         this.node = node
+        this.output = output
+
+        this.connections = new Array()
 
         this.graphics_port = new NEGraphicsPort(scene, this)
     }
 
     draw() {
         this.graphics_port.draw()
+        for (var i = 0; i < this.connections.length; i++){
+            this.connections[i].draw()
+        }
+    }
+
+    delete() {
+        for (var i = 0; i < this.connections.length; i++){
+
+            this.connections[i].delete(this)
+        }
+        this.connections = new Array()
     }
 }
 
@@ -30,6 +44,10 @@ class NEGraphicsPort {
     move(new_x, new_y) {
         this.x = new_x + this.x_offset
         this.y = new_y + this.y_offset
+
+        for (var i = 0; i < this.port.connections.length; i++){
+            this.port.connections[i].graphics_connection.move()
+        }
     }
 
     draw() {
@@ -40,7 +58,8 @@ class NEGraphicsPort {
         ctx.fillStyle = '#44444400';
         ctx.fill();
         ctx.lineWidth = 6;
-        ctx.strokeStyle = '#003300EE';
+        // ctx.strokeStyle = '#003300EE';
+        ctx.strokeStyle = Colors[this.port.type]
         ctx.stroke();
     }
 }

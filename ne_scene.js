@@ -25,11 +25,7 @@ class NEScene {
 
         this.curr_scale = 1.0
 
-
-
         this.nodes = new Array()
-        this.ports = new Array()
-        this.connections = new Array()
 
         this.currNodes = new Array()
         this.currConnections = new Array()
@@ -112,9 +108,10 @@ class NEScene {
         //     var port = this.ports[i]
         // }
 
-        // for(var i = 0; i < this.connections.length; i++) {
-        //     var connection = this.connections[i]
-        // }
+        for(var i = 0; i < this.currConnections.length; i++) {
+            var connection = this.currConnections[i]
+            connection.draw()
+        }
 
         
 
@@ -139,28 +136,18 @@ class NEScene {
                     if (node.graphics_node.x < this.mousedownpos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos_world.x){
                         if (node.graphics_node.y < this.mousedownpos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos_world.y){
                             
-                            // check for inputs
-                            for(var j = 0; j < node.inputs.length; j++) {
-                                var input = node.inputs[j]
-                                if (input.graphics_port.x - input.graphics_port.radius < this.mousedownpos_world.x && input.graphics_port.x + input.graphics_port.radius * 2 > this.mousedownpos_world.x){
-                                    if (input.graphics_port.y - input.graphics_port.radius < this.mousedownpos_world.y && input.graphics_port.y + input.graphics_port.radius * 2 > this.mousedownpos_world.y){
+                            // check for ports
+                            for(var j = 0; j < node.ports.length; j++) {
+                                var port = node.ports[j]
+                                if (port.graphics_port.x - port.graphics_port.radius < this.mousedownpos_world.x && port.graphics_port.x + port.graphics_port.radius * 2 > this.mousedownpos_world.x){
+                                    if (port.graphics_port.y - port.graphics_port.radius < this.mousedownpos_world.y && port.graphics_port.y + port.graphics_port.radius * 2 > this.mousedownpos_world.y){
                                         this.mode = Mode.Connect
-                                        this.currConnections.push(new NEConnection())
+                                        this.currConnections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
                                         return
                                     }
                                 }
                             }
         
-                             // check for outputs
-                             for(var j = 0; j < node.outputs.length; j++) {
-                                var output = node.outputs[j]
-                                if (output.graphics_port.x - output.graphics_port.radius < this.mousedownpos_world.x && output.graphics_port.x + output.graphics_port.radius * 2 > this.mousedownpos_world.x){
-                                    if (output.graphics_port.y - output.graphics_port.radius < this.mousedownpos_world.y && output.graphics_port.y + output.graphics_port.radius * 2 > this.mousedownpos_world.y){
-                                        this.mode = Mode.Connect
-                                        return
-                                    }
-                                }
-                            }
         
                             node.graphics_node.select.call(node.graphics_node)
                             this.currNodes.push(node)
@@ -237,6 +224,51 @@ class NEScene {
             }
         }
 
+        if (this.mode === Mode.Connect){
+
+            for(var i = 0; i < this.nodes.length; i++) {
+                var node = this.nodes[i]
+    
+                if (node.graphics_node.x < this.mousepos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousepos_world.x){
+                    if (node.graphics_node.y < this.mousepos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousepos_world.y){
+                            
+                         // check for ports
+                         for(var j = 0; j < node.ports.length; j++) {
+                            var port = node.ports[j]
+                            if (port.graphics_port.x - port.graphics_port.radius < this.mousepos_world.x && port.graphics_port.x + port.graphics_port.radius * 2 > this.mousepos_world.x){
+                                if (port.graphics_port.y - port.graphics_port.radius < this.mousepos_world.y && port.graphics_port.y + port.graphics_port.radius * 2 > this.mousepos_world.y){
+                                    
+
+                                    for(var k = 0; k < this.currConnections.length; k++) {
+                                        var connection = this.currConnections[k]
+                                        if (connection.port1.type === port.type && connection.port1.output !== port.output){
+                                            connection.port2 = port
+                                            port.connections.push(connection)
+                                            connection.port1.connections.push(connection)
+                                            connection.graphics_connection.move()
+                                        }
+                                    }
+
+                                    this.currConnections = new Array()
+
+                                    this.mode = Mode.None
+                                    this.update()
+                                    return
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for(var i = 0; i < this.currConnections.length; i++) {
+                var connection = this.currConnections[i]
+                connection.delete()
+            }
+            this.currConnections = new Array()
+            
+        }
+
         this.update()
         this.mode = Mode.None
 
@@ -285,6 +317,15 @@ class NEScene {
 
             this.mousedownpos_world = this.mousepos_world
             this.mousedownpos_screen = this.mousepos_screen
+            this.update()
+        }
+
+        if (this.mode === Mode.Connect){
+            for(var i = 0; i < this.currConnections.length; i++) {
+                var connection = this.currConnections[i]
+                connection.graphics_connection.move(this.mousepos_world.x, this.mousepos_world.y)
+            }
+
             this.update()
         }
         
