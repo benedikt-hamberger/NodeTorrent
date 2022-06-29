@@ -14,14 +14,31 @@ class NEConnection {
     }
 
     delete(port) {
-        if(this.port1 !== port && this.port1) {
+
+        if(this.port1 !== port) {
             var idx = this.port1.connections.indexOf(this.that)
             this.port1.connections.splice(idx, 1)
+            if(this.port1.connections.length === 0){
+                this.port1.connected = false
+            }
         }
-        if(this.port2 !== port && this.port2) {
-            var idx = this.port1.connections.indexOf(this.that)
+
+        if(this.port2 !== port) {
+            var idx = this.port2.connections.indexOf(this.that)
             this.port2.connections.splice(idx, 1)
+            if(this.port2.connections.length === 0){
+                this.port2.connected = false
+            }
         }
+    }
+
+    serialize() {
+        var serialize_str = {
+            node: this.port2.node.id,
+            port: this.port2.id
+        }
+
+        return serialize_str
     }
 }
 
