@@ -13,9 +13,9 @@ class NEConnection {
         this.graphics_connection.draw()
     }
 
-    delete(port) {
+    delete() {
 
-        if(this.port1 !== port && this.port1) {
+        if(this.port1) {
             var idx = this.port1.connections.indexOf(this.that)
             this.port1.connections.splice(idx, 1)
             if(this.port1.connections.length === 0){
@@ -23,7 +23,7 @@ class NEConnection {
             }
         }
 
-        if(this.port2 !== port && this.port2) {
+        if(this.port2) {
             var idx = this.port2.connections.indexOf(this.that)
             this.port2.connections.splice(idx, 1)
             if(this.port2.connections.length === 0){
@@ -83,7 +83,7 @@ class NEGraphicsConnection {
 
         ctx.beginPath()
         ctx.strokeStyle = Colors[this.connection.type]
-        ctx.strokeWidth = 2
+        ctx.lineWidth = 2
         ctx.moveTo(this.start.x, this.start.y)
         ctx.bezierCurveTo(
                 this.cp1.x, this.cp1.y,

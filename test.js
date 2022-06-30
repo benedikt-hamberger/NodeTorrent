@@ -1,8 +1,9 @@
 
 const Colors = {
-    1: "#EE8800",
-    2: "#0088EE",
-    3: "#33AA11"
+    0: "#FFFFFF",
+    1: "#33AA11",
+    2: "#EE8800",
+    3: "#3333AA"
 }
 
 
@@ -12,20 +13,9 @@ var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
 
-// var node = new NENode(scene, "MyNode")
-// node.graphics_node.move(0, 0)
-// scene.nodes.push(node)
+var widget = new NEWidget(scene)
+scene.widgets.push(widget)
 
-
-// var node2 = new NENode(scene, "TestNode")
-// node2.graphics_node.move(300, 0)
-// scene.nodes.push(node2)
-// node2.can_be_deleted = false
-
-// var node3 = new NENode(scene, "ABC")
-// node3.graphics_node.move(600, 200)
-// scene.nodes.push(node3)
-// node3.can_be_selected = false
 
 scene.update()
 

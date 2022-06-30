@@ -26,9 +26,10 @@ class NEScene {
         this.curr_scale = 1.0
 
         this.nodes = new Array()
+        this.widgets = new Array()
 
         this.selected_nodes = new Array()
-        this.currConnections = new Array()
+        this.curr_connections = new Array()
 
 
         canvas.onmousedown = (e) => {that.mousedown(e)}
@@ -89,34 +90,35 @@ class NEScene {
         this.ctx.setTransform(1,0,0,1,0,0);
         // Will always clear the right space
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        
         this.ctx.restore();
 
+
         this.drawSelectionRect()
-
-        // var m = matrix;
-        // ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
-
         this.drawGrid()
+
+        for(var i = 0; i < this.curr_connections.length; i++) {
+            var connection = this.curr_connections[i]
+            connection.draw()
+        }
 
         for(var i = 0; i < this.nodes.length; i++) {
             var node = this.nodes[i]
             node.draw()
         }
 
-        // for(var i = 0; i < this.ports.length; i++) {
-        //     var port = this.ports[i]
-        // }
-
-        for(var i = 0; i < this.currConnections.length; i++) {
-            var connection = this.currConnections[i]
-            connection.draw()
+        for(var i = 0; i < this.widgets.length; i++) {
+            var widget = this.widgets[i]
+            widget.draw()
         }
 
-        
+    }
 
-        
-
+    clear_curr_connections() {
+        for(var i = 0; i < this.curr_connections.length; i++) {
+            var connection = this.curr_connections[i]
+            connection.delete()
+        }
+        this.curr_connections = new Array()
     }
 
     mousedown(e) {
@@ -152,18 +154,20 @@ class NEScene {
                                                         con.port1 = con.port2
                                                     }
                                                     con.port2 = null
-                                                    this.currConnections.push(con)
+                                                    this.curr_connections.push(con)
+
+                                                    // console.log(con)
                                                 }
 
                                                 port.connections = new Array()
-
+                                                
                                                 this.mode = Mode.Connect
                                                 return
                                             }
                                         }
                                         else{
                                             this.mode = Mode.Connect
-                                            this.currConnections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
+                                            this.curr_connections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
                                             return
                                         }
                                     }
@@ -256,20 +260,26 @@ class NEScene {
                             if (port.graphics_port.x - port.graphics_port.radius < this.mousepos_world.x && port.graphics_port.x + port.graphics_port.radius * 2 > this.mousepos_world.x){
                                 if (port.graphics_port.y - port.graphics_port.radius < this.mousepos_world.y && port.graphics_port.y + port.graphics_port.radius * 2 > this.mousepos_world.y){
                                     
+                                    for(var k = 0; k < this.curr_connections.length; k++) {
+                                        var con = this.curr_connections[k]
+                                        
+                                        
+                                        if (con.port1.type === port.type && con.port1.output !== port.output){
+                                            
+                                            con.port2 = port
 
-                                    for(var k = 0; k < this.currConnections.length; k++) {
-                                        var connection = this.currConnections[k]
-                                        if (connection.port1.type === port.type && connection.port1.output !== port.output){
-                                            connection.port2 = port
-                                            port.connections.push(connection)
-                                            connection.port1.connected = true
-                                            connection.port2.connected = true
-                                            connection.port1.connections.push(connection)
-                                            connection.graphics_connection.move()
+                                            con.port1.connections.push(con)
+                                            con.port2.connections.push(con)
+
+                                            con.port1.connected = true
+                                            con.port2.connected = true
+
+                                            con.graphics_connection.move()
+                                            this.curr_connections.splice(k)
                                         }
                                     }
 
-                                    this.currConnections = new Array()
+                                    this.clear_curr_connections()
 
                                     this.mode = Mode.None
                                     this.update()
@@ -278,14 +288,10 @@ class NEScene {
                             }
                         }
                     }
-                }
+                } 
             }
 
-            for(var i = 0; i < this.currConnections.length; i++) {
-                var connection = this.currConnections[i]
-                connection.delete()
-            }
-            this.currConnections = new Array()
+            this.clear_curr_connections()
             
         }
 
@@ -341,8 +347,8 @@ class NEScene {
         }
 
         if (this.mode === Mode.Connect){
-            for(var i = 0; i < this.currConnections.length; i++) {
-                var connection = this.currConnections[i]
+            for(var i = 0; i < this.curr_connections.length; i++) {
+                var connection = this.curr_connections[i]
                 connection.graphics_connection.move(this.mousepos_world.x, this.mousepos_world.y)
             }
 
@@ -379,12 +385,19 @@ class NEScene {
 
     mousewheel(e) {
         this.curr_scale *= 1.0 - (e.deltaY / 102.0) / 5.0
-        // console.log(this.curr_scale)
-        // this.ctx.scale(this.curr_scale, this.curr_scale)
-        this.ctx.scale(1.0 - (e.deltaY / 102.0) / 5.0, 1.0 - (e.deltaY / 102.0) / 5.0)
-        e.preventDefault()
+        if (this.curr_scale < 0.5){
+            this.curr_scale = 0.5
+        }
+        else if(this.curr_scale > 2.0){
+            this.curr_scale = 2.0
+        }
+        else{
 
-        this.update()
+            this.ctx.scale(1.0 - (e.deltaY / 102.0) / 5.0, 1.0 - (e.deltaY / 102.0) / 5.0)
+            e.preventDefault()
+    
+            this.update()
+        }
     }
 
     serialize() {
@@ -401,13 +414,15 @@ class NEScene {
         this.nodes = new Array()
         this.update()
 
-        var test_str = '{"nodes":[{"id":0,"title":"MyNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":17,"y":270},{"id":1,"title":"TestNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":false,"can_be_selected":true,"can_be_moved":true,"x":107,"y":59},{"id":2,"title":"ABC","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":200}]}'
-    
+        // var test_str = '{"nodes":[{"id":0,"title":"MyNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":17,"y":270},{"id":1,"title":"TestNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":false,"can_be_selected":true,"can_be_moved":true,"x":107,"y":59},{"id":2,"title":"ABC","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":200}]}'
+        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":50},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":150},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":0,"output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":1,"output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":1,"output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":311,"y":80}]}'
+
         var obj = JSON.parse(test_str)
         for (var i = 0; i < obj.nodes.length; i++){
             var ser_node = obj.nodes[i]
+            var node = eval('new ' + ser_node.className + '(this)')
             
-            var node = new NENode(this, ser_node.title)
+            // var node = new NENode(this, ser_node.title)
             node.deserialize(ser_node)
             this.nodes.push(node)
         }

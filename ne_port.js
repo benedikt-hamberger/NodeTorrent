@@ -53,6 +53,7 @@ class NEPort {
             }
         }
         var serialize_str = {
+            className: this.constructor.name,
             id: this.id,
             type: this.type,
             output: this.output,
@@ -64,8 +65,8 @@ class NEPort {
     }
 
     deserialize(ser_port){
-        this.graphics_port.x_offset = ser_port.x
-        this.graphics_port.y_offset = ser_port.y
+        // this.graphics_port.x_offset = ser_port.x
+        // this.graphics_port.y_offset = ser_port.y
 
         // this.graphics_port.x = this.node.graphics_node.x + ser_port.x
         // this.graphics_port.y = this.node.graphics_node.y + ser_port.y
@@ -107,7 +108,7 @@ class NEGraphicsPort {
         this.x_offset = 0
         this.y_offset = 0
 
-        this.radius = 8
+        this.radius = 6
 
     }
 
@@ -130,7 +131,7 @@ class NEGraphicsPort {
             ctx.fillStyle = Colors[this.port.type] + "AA"
         }
         ctx.fill();
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 4;
         ctx.strokeStyle = Colors[this.port.type]
         ctx.stroke();
     }

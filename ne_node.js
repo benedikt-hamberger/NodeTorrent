@@ -1,7 +1,7 @@
 class NENode {
-    constructor(scene, title) {
+    constructor(scene) {
         this.scene = scene
-        this.title = title
+        this.title = ""
 
         // get first free id
         var curr_id = 0
@@ -86,7 +86,9 @@ class NENode {
             var port_str = this.ports[i].serialize()
             ports_arr.push(port_str)
         }
+
         var serialize_str = {
+            className: this.constructor.name,
             id: this.id,
             title: this.title,
             ports: ports_arr,
@@ -107,11 +109,12 @@ class NENode {
         this.graphics_node.x = ser_node.x
         this.graphics_node.y = ser_node.y
 
-        for (var i = 0; i < ser_node.ports.length; i++){
-            var ser_port = ser_node.ports[i]
-            var port = new NEPort(this.scene, this, ser_port.type, ser_port.output)
-            this.ports.push(port)
-        }
+        // for (var i = 0; i < ser_node.ports.length; i++){
+        //     var ser_port = ser_node.ports[i]
+        //     var port = eval('new ' + ser_port.className + '(this.scene, this, ' + ser_port.type + ', ' + ser_port.output + ')')
+        //     // var port = new NEPort(this.scene, this, ser_port.type, ser_port.output)
+        //     this.ports.push(port)
+        // }
     }
 }
 
@@ -132,6 +135,14 @@ class NEGraphicsNode {
 
         this.selected = false
         this.initialselectionpos = {x: 0, y: 0}
+
+        this.title_color = '#DDDDDD'
+
+        this.title_gradient_1 = '#BB3131AF'
+        this.title_gradient_2 = '#992121AF'
+
+        this.body_gradient_1 = '#101112AF'
+        this.body_gradient_2 = '#0A0B0C9F'
     }
 
     select() {
@@ -159,9 +170,9 @@ class NEGraphicsNode {
 
         // draw head
 
-        var title_gradient = ctx.createLinearGradient(20, 100, 150, 127)
-        title_gradient.addColorStop(0, '#BB3131AF')
-        title_gradient.addColorStop(1, '#992121AF')
+        var title_gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.width, this.y + this.title_height)
+        title_gradient.addColorStop(0, this.title_gradient_1)
+        title_gradient.addColorStop(1, this.title_gradient_2)
 
 
         ctx.beginPath();
@@ -175,14 +186,16 @@ class NEGraphicsNode {
         // draw title
 
         ctx.font = "18px Arial";
-        ctx.fillStyle = '#DDDDDD';
+        ctx.strokeStyle = '#000000FF'
+        ctx.lineWidth = 1
+        ctx.strokeText(this.node.title, this.x + this.title_padding, this.y - this.title_padding + this.title_height)
+        ctx.fillStyle = this.title_color;
         ctx.fillText(this.node.title, this.x + this.title_padding, this.y - this.title_padding + this.title_height)
-        
         // draw body
 
-        var body_gradient = ctx.createLinearGradient(20, 100, 150, 127)
-        body_gradient.addColorStop(0, '#101112AF')
-        body_gradient.addColorStop(1, '#0A0B0C9F')
+        var body_gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.width, this.y + this.title_height)
+        body_gradient.addColorStop(0, this.body_gradient_1)
+        body_gradient.addColorStop(1, this.body_gradient_2)
 
         ctx.beginPath();
         ctx.moveTo(this.x, this.y + this.title_height)
@@ -194,15 +207,16 @@ class NEGraphicsNode {
 
 
         // draw outline
-
-        ctx.lineWidth = 1
-        ctx.beginPath();
-        ctx.moveTo(this.x + this.width - this.border_radius, this.y + this.height)
-        ctx.arcTo(this.x, this.y + this.height, this.x, this.y, this.border_radius)
-        ctx.arcTo(this.x, this.y, this.x + this.width, this.y, this.border_radius)
-        ctx.arcTo(this.x + this.width, this.y, this.x + this.width, this.y + this.height, this.border_radius)
-        ctx.arcTo(this.x + this.width, this.y + this.height, this.x, this.y + this.height, this.border_radius)
-        ctx.strokeStyle = this.selected? '#EE8800' : '#000000'
-        ctx.stroke();
+        if (this.selected){
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width - this.border_radius, this.y + this.height)
+            ctx.arcTo(this.x, this.y + this.height, this.x, this.y, this.border_radius)
+            ctx.arcTo(this.x, this.y, this.x + this.width, this.y, this.border_radius)
+            ctx.arcTo(this.x + this.width, this.y, this.x + this.width, this.y + this.height, this.border_radius)
+            ctx.arcTo(this.x + this.width, this.y + this.height, this.x, this.y + this.height, this.border_radius)
+            ctx.lineWidth = this.selected? 2 : 0
+            ctx.strokeStyle = this.selected? '#EE8800' : '#000000'
+            ctx.stroke();
+        }
     }
 }
