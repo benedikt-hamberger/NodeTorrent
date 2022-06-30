@@ -27,7 +27,7 @@ class NEScene {
 
         this.nodes = new Array()
 
-        this.currNodes = new Array()
+        this.selected_nodes = new Array()
         this.currConnections = new Array()
 
 
@@ -149,21 +149,42 @@ class NEScene {
                                 var port = node.ports[j]
                                 if (port.graphics_port.x - port.graphics_port.radius < this.mousedownpos_world.x && port.graphics_port.x + port.graphics_port.radius * 2 > this.mousedownpos_world.x){
                                     if (port.graphics_port.y - port.graphics_port.radius < this.mousedownpos_world.y && port.graphics_port.y + port.graphics_port.radius * 2 > this.mousedownpos_world.y){
-                                        this.mode = Mode.Connect
-                                        this.currConnections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
-                                        return
+                                        
+                                        if(e.ctrlKey){
+                                            if(port.connected){
+                                                for(var k = 0; k < port.connections.length; k++){
+                                                    var con = port.connections[k]
+
+                                                    port.connected = false
+                                                    if(con.port1 === port){
+                                                        con.port1 = con.port2
+                                                    }
+                                                    con.port2 = null
+                                                    this.currConnections.push(con)
+                                                }
+
+                                                port.connections = new Array()
+
+                                                this.mode = Mode.Connect
+                                                return
+                                            }
+                                        }
+                                        else{
+                                            this.mode = Mode.Connect
+                                            this.currConnections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
+                                            return
+                                        }
                                     }
                                 }
                             }
-        
-        
-                            node.graphics_node.select.call(node.graphics_node)
-                            this.currNodes.push(node)
+                            
+                            // node checks self if it can be selected
+                            node.select(this)
                         }
                     }
                 }
         
-                if (this.currNodes.length == 0) {
+                if (this.selected_nodes.length == 0) {
                     this.mode = Mode.Select
                     this.selectionrange = {x: this.mousedownpos_world.x, y: this.mousedownpos_world.y, width: 0, height: 0}
                 }
@@ -204,10 +225,7 @@ class NEScene {
                 
                 if (node.graphics_node.x > this.selectionrange.x && node.graphics_node.x + node.graphics_node.width < this.selectionrange.x + this.selectionrange.width){
                     if (node.graphics_node.y > this.selectionrange.y && node.graphics_node.y + node.graphics_node.height < this.selectionrange.y + this.selectionrange.height){
-                        
-                        
-                        this.currNodes.push(node)
-                        node.graphics_node.select.call(node.graphics_node)
+                        node.select(this)
                     }
                 }
             }
@@ -217,18 +235,18 @@ class NEScene {
             this.mousedownpos_world = this.toWorld(e.clientX - this.canvas.offsetLeft, e.clientY - this.canvas.offsetTop)
 
 
-            if ( this.currNodes.length === 0){
+            if ( this.selected_nodes.length === 0){
                 this.mode = Mode.None
             }
         }
         if (this.mode === Mode.None) {
 
-            if (this.currNodes.length > 0) {
-                for(var i = 0; i < this.currNodes.length; i++) {
-                    var node = this.currNodes[i]
-                    node.graphics_node.selected = false
+            if (this.selected_nodes.length > 0) {
+                for(var i = 0; i < this.selected_nodes.length; i++) {
+                    var node = this.selected_nodes[i]
+                    node.unselect(this)
                 }
-                this.currNodes = new Array()
+                this.selected_nodes = new Array()
             }
         }
 
@@ -252,6 +270,8 @@ class NEScene {
                                         if (connection.port1.type === port.type && connection.port1.output !== port.output){
                                             connection.port2 = port
                                             port.connections.push(connection)
+                                            connection.port1.connected = true
+                                            connection.port2.connected = true
                                             connection.port1.connections.push(connection)
                                             connection.graphics_connection.move()
                                         }
@@ -292,19 +312,19 @@ class NEScene {
         }
 
         if (this.mode === Mode.None) {
-            if (this.currNodes.length > 0) {
+            if (this.selected_nodes.length > 0) {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
             }
     
-            for(var i = 0; i < this.currNodes.length; i++) {
-                var node = this.currNodes[i]
+            for(var i = 0; i < this.selected_nodes.length; i++) {
+                var node = this.selected_nodes[i]
                 node.graphics_node.move(
                     this.mousepos_world.x - this.mousedownpos_world.x
                     ,this.mousepos_world.y - this.mousedownpos_world.y
                 )
             }
     
-            if (this.currNodes.length > 0) {
+            if (this.selected_nodes.length > 0) {
                 this.update()
             }
         }
@@ -340,48 +360,53 @@ class NEScene {
     }
 
     keydown(e) {
-        // Delete
+        // Del -> Delete Selected
         if (e.keyCode == 46) {
 
-            for(var i = 0; i < this.currNodes.length; i++) {
-                var node = this.currNodes[i]
-
-                if(node.can_be_deleted){
-                    node.delete()
-
-                    var idx = this.nodes.indexOf(node)
-                    this.nodes.splice(idx, 1)
-                }
+            for(var i = 0; i < this.selected_nodes.length; i++) {
+                var node = this.selected_nodes[i]
+                node.delete(this)
             }
 
-            this.currNodes = new Array()
-
+            this.selected_nodes = new Array()
             this.mode = Mode.None
             this.update()
             
         }
 
-        if (e.keyCode == 83){
-            // for(var i = 0; i < this.nodes.length; i++){
-            //     var node = this.nodes[i]
-            // }
+        // D -> Deserialize
+        if(e.keyCode == 68) {
+            this.deserialize()
+        }
 
-            var serial_str = JSON.stringify(this.nodes, function( key, value) {
-                if( key == 'nodes' || key == 'that') { return value.id;}
-                else {return value;}
-            })
-
-            console.log(serial)
+        // S -> Serialize
+        if(e.keyCode == 83) {
+            this.serialize()
         }
     }
 
     mousewheel(e) {
-        this.curr_scale *= 1.0 + (e.deltaY / 102.0) / 5.0
+        this.curr_scale *= 1.0 - (e.deltaY / 102.0) / 5.0
         // console.log(this.curr_scale)
         // this.ctx.scale(this.curr_scale, this.curr_scale)
-        this.ctx.scale(1.0 + (e.deltaY / 102.0) / 5.0, 1.0 + (e.deltaY / 102.0) / 5.0)
+        this.ctx.scale(1.0 - (e.deltaY / 102.0) / 5.0, 1.0 - (e.deltaY / 102.0) / 5.0)
         e.preventDefault()
 
+        this.update()
+    }
+
+    serialize() {
+        var nodes_arr = new Array()
+        for (var i = 0; i < this.nodes.length; i++){
+            var node_str = this.nodes[i].serialize()
+            nodes_arr.push(node_str)
+        }
+        var serialize_str = JSON.stringify({nodes: nodes_arr});
+        console.log(serialize_str)
+    }
+
+    deserialize() {
+        this.nodes = new Array()
         this.update()
     }
 }

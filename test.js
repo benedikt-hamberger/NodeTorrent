@@ -2,7 +2,7 @@
 const Colors = {
     1: "#EE8800",
     2: "#0088EE",
-    3: "#0000FF"
+    3: "#33AA11"
 }
 
 
@@ -26,6 +26,7 @@ scene.nodes.push(node2)
 var node3 = new NENode(scene, "ABC")
 node3.graphics_node.move(600, 200)
 scene.nodes.push(node3)
+node3.can_be_selected = false
 
 scene.update()
 
