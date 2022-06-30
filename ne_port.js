@@ -38,7 +38,8 @@ class NEGraphicsPort {
         this.x_offset = 0
         this.y_offset = 0
 
-        this.radius = 10
+        this.radius = 8
+
     }
 
     move(new_x, new_y) {
@@ -56,8 +57,11 @@ class NEGraphicsPort {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false);
         ctx.fillStyle = '#44444400';
+        if (this.port.connections.length > 0){
+            ctx.fillStyle =  Colors[this.port.type] + "AA"
+        }
         ctx.fill();
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 4;
         // ctx.strokeStyle = '#003300EE';
         ctx.strokeStyle = Colors[this.port.type]
         ctx.stroke();

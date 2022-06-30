@@ -15,6 +15,9 @@ var scene = new NEScene(canvas, ctx)
 var node = new NENode(scene, "MyNode")
 node.graphics_node.move(0, 0)
 scene.nodes.push(node)
+node.can_be_deleted = false
+node.can_be_selected = false
+node.can_be_moved = false
 
 var node2 = new NENode(scene, "TestNode")
 node2.graphics_node.move(300, 0)

@@ -8,6 +8,10 @@ class NENode {
         this.graphics_node = new NEGraphicsNode(scene, 20, 20)
         this.graphics_node.node = this
 
+        this.can_be_deleted = true
+        this.can_be_moved = true
+        this.can_be_selected = true
+
         var test_input = new NEPort(this.scene, this, 1, false)
         test_input.graphics_port.x_offset = this.graphics_node.x
         test_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
@@ -24,6 +28,10 @@ class NENode {
         this.ports.push(test_output)
     }
 
+    serialize() {
+        
+    }
+
     draw() {
         this.graphics_node.draw()
 
@@ -35,8 +43,14 @@ class NENode {
     }
 
     delete() {
-        for (var i = 0; i < this.ports.length; i++){
-            this.ports[i].delete()
+        if(this.can_be_deleted){
+            for (var i = 0; i < this.ports.length; i++){
+                this.ports[i].delete()
+            }
+        }
+        else{
+            this.graphics_node.selected = false
+            this.draw()
         }
     }
 }
@@ -61,19 +75,23 @@ class NEGraphicsNode {
     }
 
     select() {
-
-        this.selected = true
-        this.initialselectionpos.x = this.x
-        this.initialselectionpos.y = this.y
+        if(this.node.can_be_selected){
+            this.selected = true
+            this.initialselectionpos.x = this.x
+            this.initialselectionpos.y = this.y
+        }
     }
 
     move(new_x, new_y) {
-        this.x = new_x + this.initialselectionpos.x
-        this.y = new_y + this.initialselectionpos.y
+        if(this.node.can_be_moved){
 
-        for(var i = 0; i < this.node.ports.length; i++) {
-            var input = this.node.ports[i]
-            input.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
+            this.x = new_x + this.initialselectionpos.x
+            this.y = new_y + this.initialselectionpos.y
+    
+            for(var i = 0; i < this.node.ports.length; i++) {
+                var input = this.node.ports[i]
+                input.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
+            }
         }
 
     }

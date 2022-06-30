@@ -38,6 +38,14 @@ class NEScene {
         canvas.onwheel = (e) => {that.mousewheel(e)}
     }
 
+    serialize() {
+        // TODO
+    }
+
+    deserialize(json) {
+        // TODO
+    }
+
     toWorld(x,y){
         var matrix = this.ctx.getTransform()
         var imatrix = matrix.invertSelf();         // invert
@@ -338,10 +346,12 @@ class NEScene {
             for(var i = 0; i < this.currNodes.length; i++) {
                 var node = this.currNodes[i]
 
-                node.delete()
+                if(node.can_be_deleted){
+                    node.delete()
 
-                var idx = this.nodes.indexOf(node)
-                this.nodes.splice(idx, 1)
+                    var idx = this.nodes.indexOf(node)
+                    this.nodes.splice(idx, 1)
+                }
             }
 
             this.currNodes = new Array()
@@ -349,6 +359,19 @@ class NEScene {
             this.mode = Mode.None
             this.update()
             
+        }
+
+        if (e.keyCode == 83){
+            // for(var i = 0; i < this.nodes.length; i++){
+            //     var node = this.nodes[i]
+            // }
+
+            var serial_str = JSON.stringify(this.nodes, function( key, value) {
+                if( key == 'nodes' || key == 'that') { return value.id;}
+                else {return value;}
+            })
+
+            console.log(serial)
         }
     }
 
