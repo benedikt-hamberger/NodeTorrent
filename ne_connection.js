@@ -15,7 +15,7 @@ class NEConnection {
 
     delete(port) {
 
-        if(this.port1 !== port) {
+        if(this.port1 !== port && this.port1) {
             var idx = this.port1.connections.indexOf(this.that)
             this.port1.connections.splice(idx, 1)
             if(this.port1.connections.length === 0){
@@ -23,7 +23,7 @@ class NEConnection {
             }
         }
 
-        if(this.port2 !== port) {
+        if(this.port2 !== port && this.port2) {
             var idx = this.port2.connections.indexOf(this.that)
             this.port2.connections.splice(idx, 1)
             if(this.port2.connections.length === 0){
@@ -33,12 +33,14 @@ class NEConnection {
     }
 
     serialize() {
-        var serialize_str = {
-            node: this.port2.node.id,
-            port: this.port2.id
+        if(this.port2){
+            return {
+                node: this.port2.node.id,
+                port: this.port2.id
+            }
         }
 
-        return serialize_str
+        return null
     }
 }
 

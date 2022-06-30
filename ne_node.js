@@ -27,20 +27,20 @@ class NENode {
         this.can_be_moved = true
         this.can_be_selected = true
 
-        var test_input = new NEPort(this.scene, this, 1, false)
-        test_input.graphics_port.x_offset = this.graphics_node.x
-        test_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
-        this.ports.push(test_input)
+        // var test_input = new NEPort(this.scene, this, 1, false)
+        // test_input.graphics_port.x_offset = this.graphics_node.x
+        // test_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        // this.ports.push(test_input)
 
-        var test_output = new NEPort(this.scene, this, 1, true)
-        test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
-        test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
-        this.ports.push(test_output)
+        // var test_output = new NEPort(this.scene, this, 1, true)
+        // test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
+        // test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        // this.ports.push(test_output)
 
-        var test_output = new NEPort(this.scene, this, 2, true)
-        test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
-        test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2.5
-        this.ports.push(test_output)
+        // var test_output = new NEPort(this.scene, this, 2, true)
+        // test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
+        // test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2.5
+        // this.ports.push(test_output)
     }
 
     select(scene) {
@@ -97,6 +97,21 @@ class NENode {
             y: this.graphics_node.y
         }
         return serialize_str
+    }
+
+    deserialize(ser_node) {
+        this.id = ser_node.id
+        this.can_be_deleted = ser_node.can_be_deleted
+        this.can_be_selected = ser_node.can_be_selected
+        this.can_be_moved = ser_node.can_be_moved
+        this.graphics_node.x = ser_node.x
+        this.graphics_node.y = ser_node.y
+
+        for (var i = 0; i < ser_node.ports.length; i++){
+            var ser_port = ser_node.ports[i]
+            var port = new NEPort(this.scene, this, ser_port.type, ser_port.output)
+            this.ports.push(port)
+        }
     }
 }
 

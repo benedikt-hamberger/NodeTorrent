@@ -38,14 +38,6 @@ class NEScene {
         canvas.onwheel = (e) => {that.mousewheel(e)}
     }
 
-    serialize() {
-        // TODO
-    }
-
-    deserialize(json) {
-        // TODO
-    }
-
     toWorld(x,y){
         var matrix = this.ctx.getTransform()
         var imatrix = matrix.invertSelf();         // invert
@@ -407,6 +399,31 @@ class NEScene {
 
     deserialize() {
         this.nodes = new Array()
+        this.update()
+
+        var test_str = '{"nodes":[{"id":0,"title":"MyNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":17,"y":270},{"id":1,"title":"TestNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":false,"can_be_selected":true,"can_be_moved":true,"x":107,"y":59},{"id":2,"title":"ABC","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":200}]}'
+    
+        var obj = JSON.parse(test_str)
+        for (var i = 0; i < obj.nodes.length; i++){
+            var ser_node = obj.nodes[i]
+            
+            var node = new NENode(this, ser_node.title)
+            node.deserialize(ser_node)
+            this.nodes.push(node)
+        }
+
+        for (var i = 0; i < this.nodes.length; i++){
+            var node = this.nodes[i]
+            var ser_node = obj.nodes[i]
+
+            for (var j = 0; j < node.ports.length; j++){
+                var port = node.ports[j]
+                var ser_port = ser_node.ports[j]
+                port.deserialize(ser_port)
+            }
+            node.graphics_node.move(node.graphics_node.x, node.graphics_node.y)
+        }
+
         this.update()
     }
 }

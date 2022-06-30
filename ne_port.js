@@ -62,6 +62,38 @@ class NEPort {
         }
         return serialize_str
     }
+
+    deserialize(ser_port){
+        this.graphics_port.x_offset = ser_port.x
+        this.graphics_port.y_offset = ser_port.y
+
+        // this.graphics_port.x = this.node.graphics_node.x + ser_port.x
+        // this.graphics_port.y = this.node.graphics_node.y + ser_port.y
+
+        for (var i = 0; i < ser_port.connections.length; i++){
+            var ser_connection = ser_port.connections[i]
+            this.connected = true
+            var connection = new NEConnection(this.scene, this.graphics_port.x, this.graphics_port.y, this)
+            for (var j = 0; j < this.scene.nodes.length; j++){
+                var node = this.scene.nodes[j]
+                if(node.id === ser_connection.node){
+                    for (var k = 0; k < node.ports.length; k++){
+                        var port = node.ports[k]
+                        if(port.id === ser_connection.port){
+
+                            connection.port2 = port
+                            port.connected = true
+
+                            port.connections.push(connection)
+                            break
+                        }
+                    }
+                    if(connection.port2){break}
+                }
+            }
+            this.connections.push(connection)
+        }
+    }
 }
 
 class NEGraphicsPort {
