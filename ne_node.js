@@ -2,45 +2,33 @@ class NENode {
     constructor(scene) {
         this.scene = scene
         this.title = ""
+        this.id = 0
 
-        // get first free id
-        var curr_id = 0
-        var ids = new Array()
-        for (var i = 0; i < this.scene.nodes.length; i++){
-            var node = this.scene.nodes[i]
-            ids.push(node.id)
-        }
-        ids.every(function (a) {
-            if (curr_id === a) {
-                curr_id = a + 1;
-                return true;
-            }
-        });
-        this.id = curr_id
+        this.ports = new Map()
 
-        this.ports = new Array()
-
-        this.graphics_node = new NEGraphicsNode(scene, 20, 20)
-        this.graphics_node.node = this
+        this.graphics_node = new NEGraphicsNode(scene, this, 20, 20)
 
         this.can_be_deleted = true
         this.can_be_moved = true
         this.can_be_selected = true
+    }
 
-        // var test_input = new NEPort(this.scene, this, 1, false)
-        // test_input.graphics_port.x_offset = this.graphics_node.x
-        // test_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
-        // this.ports.push(test_input)
-
-        // var test_output = new NEPort(this.scene, this, 1, true)
-        // test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
-        // test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
-        // this.ports.push(test_output)
-
-        // var test_output = new NEPort(this.scene, this, 2, true)
-        // test_output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - test_output.graphics_port.radius * 4
-        // test_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2.5
-        // this.ports.push(test_output)
+    addPort(port){
+        var inserted = false
+        for (var i = 0; i < Object.entries(this.ports).length; i++){
+            if(!i in this.ports){
+                inserted = true
+                port.id = i
+                this.ports[i] = port
+                break
+            }
+        }
+        if(!inserted){
+            port.id = i
+            this.ports[i] = port
+        }
+        // port.graphics_port.move(this.x + port.graphics_port.x_offset, this.y + port.graphics_port.y_offset)
+        // port.graphics_port.move(this.x, this.y)
     }
 
     select(scene) {
@@ -60,21 +48,17 @@ class NENode {
     draw() {
         this.graphics_node.draw()
 
-        for(var i = 0; i < this.ports.length; i++) {
-            var input = this.ports[i]
-            input.draw()
+        for(const [id, port] of Object.entries(this.ports)) {
+            port.draw()
         }
-
     }
 
-    delete(scene) {
+    delete() {
         if(this.can_be_deleted){
-            for (var i = 0; i < this.ports.length; i++){
-                this.ports[i].delete()
+            for (const [port_id, port] of Object.entries(this.ports)){
+                port.delete()
             }
-
-            var idx = scene.nodes.indexOf(this)
-            scene.nodes.splice(idx, 1)
+           delete this.scene.nodes[this.id]
         }else{
             this.unselect()
         }
@@ -82,8 +66,8 @@ class NENode {
 
     serialize() {
         var ports_arr = new Array()
-        for (var i = 0; i < this.ports.length; i++){
-            var port_str = this.ports[i].serialize()
+        for (const [port_id, port] of Object.entries(this.ports)){
+            var port_str = port.serialize()
             ports_arr.push(port_str)
         }
 
@@ -108,23 +92,16 @@ class NENode {
         this.can_be_moved = ser_node.can_be_moved
         this.graphics_node.x = ser_node.x
         this.graphics_node.y = ser_node.y
-
-        // for (var i = 0; i < ser_node.ports.length; i++){
-        //     var ser_port = ser_node.ports[i]
-        //     var port = eval('new ' + ser_port.className + '(this.scene, this, ' + ser_port.type + ', ' + ser_port.output + ')')
-        //     // var port = new NEPort(this.scene, this, ser_port.type, ser_port.output)
-        //     this.ports.push(port)
-        // }
     }
 }
 
 class NEGraphicsNode {
-    constructor(scene, x, y) {
+    constructor(scene, node, x, y) {
         var that = this
         this.scene = scene
+        this.node = node
         this.x = x
         this.y = y
-        this.node = null
 
         this.width = 240
         this.height = 100
@@ -157,12 +134,10 @@ class NEGraphicsNode {
             this.x = new_x + this.initialselectionpos.x
             this.y = new_y + this.initialselectionpos.y
     
-            for(var i = 0; i < this.node.ports.length; i++) {
-                var input = this.node.ports[i]
-                input.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
+            for(const [id, port] of Object.entries(this.node.ports)) {
+                port.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
             }
         }
-
     }
 
     draw() {

@@ -13,10 +13,6 @@ var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
 
-var widget = new NEWidget(scene)
-scene.widgets.push(widget)
-
-
 scene.update()
 
 
@@ -39,10 +35,4 @@ window.onload = function() {
             scene.keydown(event)
         }
     }, false);
-
-    // document.addEventListener('wheel', function(event) {
-    //     if(lastDownTarget == canvas) {
-    //         scene.mousewheel(event)
-    //     }
-    // }, false);
 }

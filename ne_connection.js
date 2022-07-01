@@ -15,21 +15,25 @@ class NEConnection {
 
     delete() {
 
-        if(this.port1) {
-            var idx = this.port1.connections.indexOf(this.that)
-            this.port1.connections.splice(idx, 1)
-            if(this.port1.connections.length === 0){
-                this.port1.connected = false
+        if(this.port1 && this.port2){
+
+            if(this.port1) {
+                var idx = this.port1.connections.indexOf(this.that)
+                this.port1.connections.splice(idx, 1)
+                if(this.port1.connections.length === 0){
+                    this.port1.connected = false
+                }
+            }
+    
+            if(this.port2) {
+                var idx = this.port2.connections.indexOf(this.that)
+                this.port2.connections.splice(idx, 1)
+                if(this.port2.connections.length === 0){
+                    this.port2.connected = false
+                }
             }
         }
 
-        if(this.port2) {
-            var idx = this.port2.connections.indexOf(this.that)
-            this.port2.connections.splice(idx, 1)
-            if(this.port2.connections.length === 0){
-                this.port2.connected = false
-            }
-        }
     }
 
     serialize() {

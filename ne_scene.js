@@ -25,7 +25,7 @@ class NEScene {
 
         this.curr_scale = 1.0
 
-        this.nodes = new Array()
+        this.nodes = new Map()
         this.widgets = new Array()
 
         this.selected_nodes = new Array()
@@ -46,6 +46,24 @@ class NEScene {
         // apply to point:
         return { x :x * imatrix.a + y * imatrix.c + imatrix.e,
                  y :x * imatrix.b + y * imatrix.d + imatrix.f }
+    }
+
+    addNode(node){
+        var inserted = false
+        for (var i = 0; i < Object.entries(this.nodes).length; i++){
+            if(!i in this.nodes){
+                inserted = true
+                node.id = i
+                this.nodes[i] = node
+                break
+            }
+        }
+        if(!inserted){
+            node.id = i
+            this.nodes[i] = node
+        }
+        node.graphics_node.move(node.graphics_node.x, node.graphics_node.y)
+        this.update()
     }
 
     drawSelectionRect() {
@@ -101,15 +119,14 @@ class NEScene {
             connection.draw()
         }
 
-        for(var i = 0; i < this.nodes.length; i++) {
-            var node = this.nodes[i]
+        for(const [id, node] of Object.entries(this.nodes)) {
             node.draw()
         }
 
-        for(var i = 0; i < this.widgets.length; i++) {
-            var widget = this.widgets[i]
-            widget.draw()
-        }
+        // for(var i = 0; i < this.widgets.length; i++) {
+        //     var widget = this.widgets[i]
+        //     widget.draw()
+        // }
 
     }
 
@@ -132,15 +149,12 @@ class NEScene {
 
             if (this.mode === Mode.None){
 
-                for(var i = 0; i < this.nodes.length; i++) {
-                    var node = this.nodes[i]
-        
+                for(const [node_id, node] of Object.entries(this.nodes)) {
                     if (node.graphics_node.x < this.mousedownpos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousedownpos_world.x){
                         if (node.graphics_node.y < this.mousedownpos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousedownpos_world.y){
                             
                             // check for ports
-                            for(var j = 0; j < node.ports.length; j++) {
-                                var port = node.ports[j]
+                            for(const [port_id, port] of Object.entries(node.ports)) {
                                 if (port.graphics_port.x - port.graphics_port.radius < this.mousedownpos_world.x && port.graphics_port.x + port.graphics_port.radius * 2 > this.mousedownpos_world.x){
                                     if (port.graphics_port.y - port.graphics_port.radius < this.mousedownpos_world.y && port.graphics_port.y + port.graphics_port.radius * 2 > this.mousedownpos_world.y){
                                         
@@ -148,17 +162,22 @@ class NEScene {
                                             if(port.connected){
                                                 for(var k = 0; k < port.connections.length; k++){
                                                     var con = port.connections[k]
-
-                                                    port.connected = false
+                                                    var other_port = con.port1
                                                     if(con.port1 === port){
-                                                        con.port1 = con.port2
+                                                        other_port = con.port2
                                                     }
-                                                    con.port2 = null
-                                                    this.curr_connections.push(con)
 
-                                                    // console.log(con)
+                                                    var temp_con = new NEConnection(this, 0, 0, other_port)
+                                                    this.curr_connections.push(temp_con)
+
+                                                    var idx = other_port.connections.indexOf(con)
+                                                    other_port.connections.splice(idx)
+                                                    if(other_port.connections.length === 0){
+                                                        other_port.connected = false
+                                                    }
                                                 }
 
+                                                port.connected = false
                                                 port.connections = new Array()
                                                 
                                                 this.mode = Mode.Connect
@@ -166,9 +185,11 @@ class NEScene {
                                             }
                                         }
                                         else{
-                                            this.mode = Mode.Connect
-                                            this.curr_connections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
-                                            return
+                                            if(port.multiple_outputs || port.connections.length < 1){
+                                                this.mode = Mode.Connect
+                                                this.curr_connections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
+                                                return
+                                            }
                                         }
                                     }
                                 }
@@ -216,9 +237,7 @@ class NEScene {
             this.selectionrange.width = ((e.layerX - this.canvas.offsetLeft) - this.mousedownpos_world.x) / this.curr_scale
             this.selectionrange.height = ((e.layerY - this.canvas.offsetTop) - this.mousedownpos_world.y) / this.curr_scale
             
-            for(var i = 0; i < this.nodes.length; i++) {
-                var node = this.nodes[i]
-                
+            for(const [id, node] of Object.entries(this.nodes)) {
                 if (node.graphics_node.x > this.selectionrange.x && node.graphics_node.x + node.graphics_node.width < this.selectionrange.x + this.selectionrange.width){
                     if (node.graphics_node.y > this.selectionrange.y && node.graphics_node.y + node.graphics_node.height < this.selectionrange.y + this.selectionrange.height){
                         node.select(this)
@@ -235,6 +254,7 @@ class NEScene {
                 this.mode = Mode.None
             }
         }
+
         if (this.mode === Mode.None) {
 
             if (this.selected_nodes.length > 0) {
@@ -248,34 +268,21 @@ class NEScene {
 
         if (this.mode === Mode.Connect){
 
-            for(var i = 0; i < this.nodes.length; i++) {
-                var node = this.nodes[i]
+            for(const [node_id, node] of Object.entries(this.nodes)) {
     
                 if (node.graphics_node.x < this.mousepos_world.x && node.graphics_node.x + node.graphics_node.width > this.mousepos_world.x){
                     if (node.graphics_node.y < this.mousepos_world.y && node.graphics_node.y + node.graphics_node.height > this.mousepos_world.y){
                             
                          // check for ports
-                         for(var j = 0; j < node.ports.length; j++) {
-                            var port = node.ports[j]
+                         for(const [port_id, port] of Object.entries(node.ports)) {
                             if (port.graphics_port.x - port.graphics_port.radius < this.mousepos_world.x && port.graphics_port.x + port.graphics_port.radius * 2 > this.mousepos_world.x){
                                 if (port.graphics_port.y - port.graphics_port.radius < this.mousepos_world.y && port.graphics_port.y + port.graphics_port.radius * 2 > this.mousepos_world.y){
                                     
                                     for(var k = 0; k < this.curr_connections.length; k++) {
                                         var con = this.curr_connections[k]
                                         
-                                        
                                         if (con.port1.type === port.type && con.port1.output !== port.output){
-                                            
-                                            con.port2 = port
-
-                                            con.port1.connections.push(con)
-                                            con.port2.connections.push(con)
-
-                                            con.port1.connected = true
-                                            con.port2.connected = true
-
-                                            con.graphics_connection.move()
-                                            this.curr_connections.splice(k)
+                                            con.port1.addConnection(node_id, port_id)
                                         }
                                     }
 
@@ -375,6 +382,7 @@ class NEScene {
         // D -> Deserialize
         if(e.keyCode == 68) {
             this.deserialize()
+            // this.addNode(new NEExecutionStart(this))
         }
 
         // S -> Serialize
@@ -402,8 +410,8 @@ class NEScene {
 
     serialize() {
         var nodes_arr = new Array()
-        for (var i = 0; i < this.nodes.length; i++){
-            var node_str = this.nodes[i].serialize()
+        for (const [id, node] of Object.entries(this.nodes)){
+            var node_str = node.serialize()
             nodes_arr.push(node_str)
         }
         var serialize_str = JSON.stringify({nodes: nodes_arr});
@@ -422,18 +430,17 @@ class NEScene {
             var ser_node = obj.nodes[i]
             var node = eval('new ' + ser_node.className + '(this)')
             
-            // var node = new NENode(this, ser_node.title)
             node.deserialize(ser_node)
-            this.nodes.push(node)
+            this.addNode(node)
         }
 
-        for (var i = 0; i < this.nodes.length; i++){
-            var node = this.nodes[i]
+        for (var i = 0; i < obj.nodes.length; i++){
             var ser_node = obj.nodes[i]
+            var node = this.nodes[ser_node.id]
 
-            for (var j = 0; j < node.ports.length; j++){
-                var port = node.ports[j]
+            for (var j = 0; j < ser_node.ports.length; j++){
                 var ser_port = ser_node.ports[j]
+                var port = node.ports[ser_port.id]
                 port.deserialize(ser_port)
             }
             node.graphics_node.move(node.graphics_node.x, node.graphics_node.y)
