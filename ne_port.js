@@ -4,26 +4,33 @@ class NEPort {
         this.scene = scene
         this.type = type
         this.node = node
-
-        // get first free id
-        var curr_id = 0
-        var ids = new Array()
-        for (var i = 0; i < this.node.ports.length; i++){
-            var port = this.node.ports[i]
-            ids.push(port.id)
-        }
-        ids.every(function (a) {
-            if (curr_id === a) {
-                curr_id = a + 1;
-                return true;
-            }
-        });
-        this.id = curr_id
+        this.id = 0
         this.output = output
+        this.multiple_outputs = output
+
         this.connections = new Array()
         this.graphics_port = new NEGraphicsPort(scene, this)
-        this.can_have_multiple_connections = output
         this.connected = false
+    }
+
+    addConnection(node_id, port_id){
+        var other_port = this.scene.nodes[node_id].ports[port_id]
+
+        if((this.connections.length < 1 || this.multiple_outputs) && (other_port.connections.length < 1 || other_port.multiple_outputs))
+        { 
+            var con = new NEConnection(this.scene, 0, 0, this)
+
+            con.port1 = this
+            con.port2 = other_port
+
+            other_port.connections.push(con)
+            this.connections.push(con)
+
+            this.connected = true
+            other_port.connected = true
+            con.graphics_connection.move()
+        }
+
     }
 
     draw() {
@@ -62,28 +69,19 @@ class NEPort {
     }
 
     deserialize(ser_port){
+
         for (var i = 0; i < ser_port.connections.length; i++){
             var ser_connection = ser_port.connections[i]
-            this.connected = true
-            var connection = new NEConnection(this.scene, this)
-            for (var j = 0; j < this.scene.nodes.length; j++){
-                var node = this.scene.nodes[j]
+            for (const [node_id, node] of Object.entries(this.scene.nodes)){
                 if(node.id === ser_connection.node){
-                    for (var k = 0; k < node.ports.length; k++){
-                        var port = node.ports[k]
+                    for (const [port_id, port] of Object.entries(node.ports)){
                         if(port.id === ser_connection.port){
-
-                            connection.port2 = port
-                            port.connected = true
-
-                            port.connections.push(connection)
+                            this.addConnection(node_id, port_id)
                             break
                         }
                     }
-                    if(connection.port2){break}
                 }
             }
-            this.connections.push(connection)
         }
     }
 }

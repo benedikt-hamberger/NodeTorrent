@@ -13,9 +13,7 @@ var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
 
-var widget = new NEWidget(scene)
-scene.widgets.push(widget)
-
+scene.widgets.push(new NETextWidget(scene))
 
 scene.update()
 
@@ -39,5 +37,4 @@ window.onload = function() {
             scene.keydown(event)
         }
     }, false);
-
 }
