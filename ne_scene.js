@@ -4,7 +4,8 @@ const Mode = {
     Connect: 3,
     PendingMove: 4,
     Move: 5,
-    ContextMenu: 6
+    ContextMenu: 6,
+    EditText: 7
 }
 
 class NEScene {
@@ -123,10 +124,10 @@ class NEScene {
             node.draw()
         }
 
-        // for(var i = 0; i < this.widgets.length; i++) {
-        //     var widget = this.widgets[i]
-        //     widget.draw()
-        // }
+        for(var i = 0; i < this.widgets.length; i++) {
+            var widget = this.widgets[i]
+            widget.draw()
+        }
 
     }
 
@@ -365,29 +366,83 @@ class NEScene {
     }
 
     keydown(e) {
-        // Del -> Delete Selected
-        if (e.keyCode == 46) {
 
-            for(var i = 0; i < this.selected_nodes.length; i++) {
-                var node = this.selected_nodes[i]
-                node.delete(this)
+        if (this.mode == Mode.EditText){
+
+            var widget = this.widgets[0]
+            if(e.key === "ArrowLeft"){
+                widget.cursor = Math.max(0, widget.cursor - 1)
+                e.preventDefault()
+                this.update()
+                return
             }
 
-            this.selected_nodes = new Array()
-            this.mode = Mode.None
-            this.update()
-            
+            if(e.key === "ArrowRight"){
+                widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
+                e.preventDefault()
+                this.update()
+                return
+            }
+
+            if(e.key === "Delete"){
+                var new_cursor = Math.min(widget.value.length, widget.cursor + 1)
+                if(new_cursor !== widget.cursor){
+                    widget.value = widget.value.slice(0, widget.cursor) + widget.value.slice(new_cursor)
+                }
+                e.preventDefault()
+                this.update()
+                return
+            }
+
+            if(e.key === "Backspace") {
+                var new_cursor = Math.max(0, widget.cursor - 1)
+                if(new_cursor !== widget.cursor){
+                    widget.value = widget.value.slice(0, new_cursor) + widget.value.slice(widget.cursor)
+                }
+                widget.cursor = new_cursor
+                e.preventDefault()
+                this.update()
+                return
+            }
+            if(e.keyCode > 64 && e.keyCode < 91 || e.keyCode > 96 && e.keyCode < 123 || e.keyCode > 47 && e.keyCode < 52){
+
+                widget.value = widget.value.slice(0, widget.cursor) + e.key + widget.value.slice(widget.cursor)
+                widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
+                this.update()
+            }
+            else{
+                console.log(e.keyCode)
+            }
         }
 
-        // D -> Deserialize
-        if(e.keyCode == 68) {
-            this.deserialize()
-            // this.addNode(new NEExecutionStart(this))
-        }
-
-        // S -> Serialize
-        if(e.keyCode == 83) {
-            this.serialize()
+        else {
+            // Del -> Delete Selected
+            if (e.keyCode == 46) {
+    
+                for(var i = 0; i < this.selected_nodes.length; i++) {
+                    var node = this.selected_nodes[i]
+                    node.delete(this)
+                }
+    
+                this.selected_nodes = new Array()
+                this.mode = Mode.None
+                this.update()
+                
+            }
+    
+            // D -> Deserialize
+            if(e.keyCode == 68) {
+                this.deserialize()
+                // this.addNode(new NEExecutionStart(this))
+            }
+    
+            // S -> Serialize
+            if(e.keyCode == 83) {
+                // this.serialize()
+                this.mode = Mode.EditText
+                this.widgets[0].focus()
+                this.update()
+            }
         }
     }
 

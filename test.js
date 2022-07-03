@@ -13,6 +13,8 @@ var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
 
+scene.widgets.push(new NETextWidget(scene))
+
 scene.update()
 
 
