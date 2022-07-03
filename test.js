@@ -40,9 +40,4 @@ window.onload = function() {
         }
     }, false);
 
-    // document.addEventListener('wheel', function(event) {
-    //     if(lastDownTarget == canvas) {
-    //         scene.mousewheel(event)
-    //     }
-    // }, false);
 }

@@ -116,7 +116,7 @@ class NEScene {
     clear_curr_connections() {
         for(var i = 0; i < this.curr_connections.length; i++) {
             var connection = this.curr_connections[i]
-            connection.delete()
+            // connection.delete()
         }
         this.curr_connections = new Array()
     }
@@ -154,7 +154,11 @@ class NEScene {
                                                         con.port1 = con.port2
                                                     }
                                                     con.port2 = null
-                                                    this.curr_connections.push(con)
+                                                    var temp_con = new NEConnection(this, con.port1)
+                                                    this.curr_connections.push(temp_con)
+                                                    con.delete()
+
+                                                    // port.connection
 
                                                     // console.log(con)
                                                 }
@@ -165,11 +169,15 @@ class NEScene {
                                                 return
                                             }
                                         }
-                                        else{
+                                        //else if(port.connections.length < 1 || port.can_have_multiple_connections){
                                             this.mode = Mode.Connect
-                                            this.curr_connections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
+                                            this.curr_connections = new Array()
+                                            console.log(port.connections)
+                                            var temp_con = new NEConnection(this, port)
+                                            this.curr_connections.push(temp_con)
+                                            console.log(port.connections)
                                             return
-                                        }
+                                        //}
                                     }
                                 }
                             }
@@ -264,7 +272,7 @@ class NEScene {
                                         var con = this.curr_connections[k]
                                         
                                         
-                                        if (con.port1.type === port.type && con.port1.output !== port.output){
+                                        if (con.port1.type === port.type && con.port1.output !== port.output && (port.can_have_multiple_connections || port.connections.length < 1)){
                                             
                                             con.port2 = port
 
@@ -415,7 +423,7 @@ class NEScene {
         this.update()
 
         // var test_str = '{"nodes":[{"id":0,"title":"MyNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":17,"y":270},{"id":1,"title":"TestNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":false,"can_be_selected":true,"can_be_moved":true,"x":107,"y":59},{"id":2,"title":"ABC","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":200}]}'
-        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":50},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":150},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":0,"output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":1,"output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":1,"output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":311,"y":80}]}'
+        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":606,"y":47},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":83,"y":152},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":0,"output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":1,"output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":1,"output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":328,"y":78}]} '
 
         var obj = JSON.parse(test_str)
         for (var i = 0; i < obj.nodes.length; i++){

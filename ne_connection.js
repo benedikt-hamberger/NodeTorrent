@@ -1,11 +1,11 @@
 class NEConnection {
-    constructor(scene, x, y, port1) {
+    constructor(scene, port1) {
         this.that = this
         this.scene = scene
         this.port1 = port1
         this.port2 = null
         this.type = port1.type
-        this.graphics_connection = new NEGraphicsConnection(scene, x, y)
+        this.graphics_connection = new NEGraphicsConnection(scene)
         this.graphics_connection.connection = this
     }
 
@@ -14,6 +14,10 @@ class NEConnection {
     }
 
     delete() {
+
+        if(!this.port1 || !this.port2){
+            return
+        }
 
         if(this.port1) {
             var idx = this.port1.connections.indexOf(this.that)
@@ -45,10 +49,10 @@ class NEConnection {
 }
 
 class NEGraphicsConnection {
-    constructor(scene, x, y) {
+    constructor(scene) {
         this.scene = scene
         this.connection = null
-        this.start = {x: x, y: y}
+        this.start = {x: 0, y: 0}
         this.cp1 = {x: 0, y: 0}
         this.cp2 = {x: 0, y: 0}
         this.end = {x: 0, y: 0}

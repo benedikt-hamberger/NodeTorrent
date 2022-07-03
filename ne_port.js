@@ -19,13 +19,10 @@ class NEPort {
             }
         });
         this.id = curr_id
-
         this.output = output
-
         this.connections = new Array()
-
         this.graphics_port = new NEGraphicsPort(scene, this)
-
+        this.can_have_multiple_connections = output
         this.connected = false
     }
 
@@ -65,16 +62,10 @@ class NEPort {
     }
 
     deserialize(ser_port){
-        // this.graphics_port.x_offset = ser_port.x
-        // this.graphics_port.y_offset = ser_port.y
-
-        // this.graphics_port.x = this.node.graphics_node.x + ser_port.x
-        // this.graphics_port.y = this.node.graphics_node.y + ser_port.y
-
         for (var i = 0; i < ser_port.connections.length; i++){
             var ser_connection = ser_port.connections[i]
             this.connected = true
-            var connection = new NEConnection(this.scene, this.graphics_port.x, this.graphics_port.y, this)
+            var connection = new NEConnection(this.scene, this)
             for (var j = 0; j < this.scene.nodes.length; j++){
                 var node = this.scene.nodes[j]
                 if(node.id === ser_connection.node){

@@ -45,6 +45,7 @@ class NEExecutionStart extends NENode {
         var output = new NEExecutionPort(this.scene, this, true)
         output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - output.graphics_port.radius * 6
         output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        output.can_have_multiple_connections = false
         this.ports.push(output)
     }
 }
@@ -107,6 +108,7 @@ class NECalcSum extends NENode {
         var exec_output = new NEExecutionPort(this.scene, this, true)
         exec_output.graphics_port.x_offset = this.graphics_node.x +this.graphics_node.width - exec_input.graphics_port.radius * 6
         exec_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        exec_output.can_have_multiple_connections = false
         this.ports.push(exec_output)
 
         var number_1 = new NEPort(this.scene, this, 1, false)
