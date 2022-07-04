@@ -168,7 +168,7 @@ class NEScene {
                                                         other_port = con.port2
                                                     }
 
-                                                    var temp_con = new NEConnection(this, 0, 0, other_port)
+                                                    var temp_con = new NEConnection(this, other_port)
                                                     this.curr_connections.push(temp_con)
 
                                                     var idx = other_port.connections.indexOf(con)
@@ -188,7 +188,7 @@ class NEScene {
                                         else{
                                             if(port.multiple_outputs || port.connections.length < 1){
                                                 this.mode = Mode.Connect
-                                                this.curr_connections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
+                                                this.curr_connections.push(new NEConnection(this, port))
                                                 return
                                             }
                                         }
@@ -404,10 +404,11 @@ class NEScene {
                 this.update()
                 return
             }
-            if(e.keyCode > 64 && e.keyCode < 91 || e.keyCode > 96 && e.keyCode < 123 || e.keyCode > 47 && e.keyCode < 52){
+            if(e.keyCode > 64 && e.keyCode < 91 || e.keyCode > 96 && e.keyCode < 123 || e.keyCode > 47 && e.keyCode < 52 || e.keyCode === 32) {
 
                 widget.value = widget.value.slice(0, widget.cursor) + e.key + widget.value.slice(widget.cursor)
                 widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
+                e.preventDefault()
                 this.update()
             }
             else{
