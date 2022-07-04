@@ -126,6 +126,20 @@ class NEPort {
         }
         this.scene.update()
     }
+
+    get_value() {
+        if(this.output){
+            if(this.connected){
+                // this.connections[0].
+            }
+            else{
+                var i = Object.keys(this.node.ports).find(key => this.node.ports[key] === this)
+                return this.node.widgets[i].value
+            }
+
+            return null
+        }
+    }
 }
 
 class NEGraphicsPort {
@@ -159,11 +173,11 @@ class NEGraphicsPort {
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false);
         ctx.fillStyle = '#44444400';
         if (this.port.connected){
-            ctx.fillStyle = Colors[this.port.type] + "AA"
+            ctx.fillStyle = PortTypes[this.port.type] + "AA"
         }
         ctx.fill();
         ctx.lineWidth = 4;
-        ctx.strokeStyle = Colors[this.port.type]
+        ctx.strokeStyle = PortTypes[this.port.type]
         ctx.stroke();
     }
 }

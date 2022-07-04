@@ -16,6 +16,10 @@ class NEWidget {
     draw() {
         this.graphics_widget.draw()
     }
+
+    serialize() {
+        return this.value
+    }
 }
 
 class NEGraphicsWidget {

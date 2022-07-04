@@ -1,21 +1,10 @@
-
-const Colors = {
-    0: "#FFFFFF",
-    1: "#992200", // bool
-    2: "#056605", // int
-    3: "#33DD11", // float
-    4: "#AB03BD", // string
-    5: "#3333AA" // object
-}
-
-
 // get canvas and context
 var canvas = document.getElementById("myCanvas")
 var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
 
-this.scene.addNode(new NETest(this.scene))
+// this.scene.addNode(new NETest(this.scene))
 
 scene.update()
 

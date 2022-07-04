@@ -8,6 +8,15 @@ const Mode = {
     EditText: 7
 }
 
+const PortTypes = {
+    "exec": "#FFFFFF",
+    "bool": "#992200", // bool
+    "int": "#056605", // int
+    "float": "#33DD11", // float
+    "string": "#AB03BD", // string
+    "object": "#3333AA" // object
+}
+
 class NEScene {
     constructor(canvas, ctx) {
         var that = this
@@ -162,6 +171,8 @@ class NEScene {
                                         
                                         if(e.ctrlKey){
                                             if(port.connected){
+                                                port.disconnect()
+
                                                 for(var k = 0; k < port.connections.length; k++){
                                                     var con = port.connections[k]
                                                     var other_port = con.port1
@@ -176,10 +187,10 @@ class NEScene {
                                                     other_port.connections.splice(idx)
                                                     if(other_port.connections.length === 0){
                                                         other_port.connected = false
+                                                        other_port.disconnect()
                                                     }
                                                 }
-
-                                                port.disconnect()
+                                                
                                                 port.connections = new Array()
                                                 
                                                 this.mode = Mode.Connect
@@ -416,8 +427,10 @@ class NEScene {
     
             // S -> Serialize
             if(e.keyCode == 83) {
-                // this.serialize()
+                this.serialize()
+            }
 
+            if(e.key === "e"){
                 this.execute()
             }
         }
@@ -455,7 +468,7 @@ class NEScene {
         this.update()
 
         // var test_str = '{"nodes":[{"id":0,"title":"MyNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":17,"y":270},{"id":1,"title":"TestNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":false,"can_be_selected":true,"can_be_moved":true,"x":107,"y":59},{"id":2,"title":"ABC","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":200}]}'
-        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":50},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":150},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":0,"output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":1,"output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":1,"output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":311,"y":80}]}'
+        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":"exec","output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":"exec","output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":50},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":"float","output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":150},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":"float","output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":"exec","output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":"exec","output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":"float","output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":"float","output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":311,"y":80}]}'
 
         var obj = JSON.parse(test_str)
         for (var i = 0; i < obj.nodes.length; i++){

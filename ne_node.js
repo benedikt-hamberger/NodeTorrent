@@ -20,7 +20,7 @@ class NENode {
     }
 
     addPort(port){
-        if(port.type === 0){
+        if(port.type === "exec"){
             this.execution_ports++
         }
         var j = 0
@@ -52,26 +52,26 @@ class NENode {
 
         var w = null
         
-        if(port.type === 1){ // bool
+        if(port.type === "bool"){ // bool
             this.widgets[i] = null
         }
 
-        if(port.type === 2){ // int
+        if(port.type === "int"){ // int
             var w = new NETextWidget(this.scene)
             w.type = "number"
         }
 
-        if(port.type === 3){ // float
+        if(port.type === "float"){ // float
             var w = new NETextWidget(this.scene)
             w.type = "number"
         }
 
-        if(port.type === 4 && port.output){ // string
+        if(port.type === "string"){ // string
             var w = new NETextWidget(this.scene)
             w.type = "text"
         }
 
-        if(port.type === 5 && port.output){ // object
+        if(port.type === "object"){ // object
             this.widgets[i] = null
         }
 
@@ -81,7 +81,7 @@ class NENode {
             w.graphics_widget.y_offset = 5 + this.graphics_node.title_height + j * this.slot_height
         }
 
-        this.graphics_node.height = this.graphics_node.title_height + 10.0 + Object.entries(this.ports).length * this.slot_height
+        this.graphics_node.height = this.graphics_node.title_height + 10.0 + (j + 1) * this.slot_height
     }
 
     select(scene) {
@@ -130,11 +130,18 @@ class NENode {
             ports_arr.push(port_str)
         }
 
+        var widgets_arr = new Array()
+        for (const [widget_id, widget] of Object.entries(this.widgets)){
+            var widget_str = widget.serialize()
+            widgets_arr.push(widget_str)
+        }
+
         var serialize_str = {
             className: this.constructor.name,
             id: this.id,
             title: this.title,
             ports: ports_arr,
+            widgets: widgets_arr,
             can_be_deleted: this.can_be_deleted,
             can_be_selected: this.can_be_selected,
             can_be_moved: this.can_be_moved,
