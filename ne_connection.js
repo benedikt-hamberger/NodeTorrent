@@ -86,7 +86,7 @@ class NEGraphicsConnection {
         var ctx = this.scene.ctx
 
         ctx.beginPath()
-        ctx.strokeStyle = Colors[this.connection.type]
+        ctx.strokeStyle = PortTypes[this.connection.type]
         ctx.lineWidth = 2
         ctx.moveTo(this.start.x, this.start.y)
         ctx.bezierCurveTo(

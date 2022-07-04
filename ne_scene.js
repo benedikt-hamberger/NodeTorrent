@@ -8,6 +8,15 @@ const Mode = {
     EditText: 7
 }
 
+const PortTypes = {
+    "exec": "#FFFFFF",
+    "bool": "#992200", // bool
+    "int": "#056605", // int
+    "float": "#33DD11", // float
+    "string": "#AB03BD", // string
+    "object": "#3333AA" // object
+}
+
 class NEScene {
     constructor(canvas, ctx) {
         var that = this
@@ -27,10 +36,12 @@ class NEScene {
         this.curr_scale = 1.0
 
         this.nodes = new Map()
-        this.widgets = new Array()
 
         this.selected_nodes = new Array()
         this.curr_connections = new Array()
+        this.curr_widget = null
+
+        this.cm = new NEContextMenu(this)
 
 
         canvas.onmousedown = (e) => {that.mousedown(e)}
@@ -47,6 +58,12 @@ class NEScene {
         // apply to point:
         return { x :x * imatrix.a + y * imatrix.c + imatrix.e,
                  y :x * imatrix.b + y * imatrix.d + imatrix.f }
+    }
+
+    toScene(x, y){
+        var matrix = this.ctx.getTransform()
+        return { x :x * matrix.a + y * matrix.c + matrix.e,
+                 y :x * matrix.b + y * matrix.d + matrix.f }
     }
 
     addNode(node){
@@ -124,9 +141,8 @@ class NEScene {
             node.draw()
         }
 
-        for(var i = 0; i < this.widgets.length; i++) {
-            var widget = this.widgets[i]
-            widget.draw()
+        if(this.cm){
+            this.cm.graphics_cm.draw()
         }
 
     }
@@ -161,6 +177,8 @@ class NEScene {
                                         
                                         if(e.ctrlKey){
                                             if(port.connected){
+                                                port.disconnect()
+
                                                 for(var k = 0; k < port.connections.length; k++){
                                                     var con = port.connections[k]
                                                     var other_port = con.port1
@@ -175,10 +193,10 @@ class NEScene {
                                                     other_port.connections.splice(idx)
                                                     if(other_port.connections.length === 0){
                                                         other_port.connected = false
+                                                        other_port.disconnect()
                                                     }
                                                 }
-
-                                                port.connected = false
+                                                
                                                 port.connections = new Array()
                                                 
                                                 this.mode = Mode.Connect
@@ -191,6 +209,21 @@ class NEScene {
                                                 this.curr_connections.push(new NEConnection(this, port))
                                                 return
                                             }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // check for widgets
+                            for(const [widget_id, widget] of Object.entries(node.widgets)) {
+                                if(widget && widget.visible){
+                                    if (widget.graphics_widget.x < this.mousedownpos_world.x && widget.graphics_widget.x + widget.graphics_widget.width > this.mousedownpos_world.x){
+                                        if (widget.graphics_widget.y < this.mousedownpos_world.y && widget.graphics_widget.y + widget.graphics_widget.height > this.mousedownpos_world.y){
+                                            
+                                            this.mode = Mode.EditText
+                                            widget.focus()
+                                            this.curr_widget = widget
+                                            return
                                         }
                                     }
                                 }
@@ -210,10 +243,26 @@ class NEScene {
                     this.mode = Mode.None
                 }
             }
+
+            if (this.mode === Mode.EditText) {
+                if(this.curr_widget){
+                    this.curr_widget.unfocus()
+                }
+            }
+
+            if (this.mode === Mode.ContextMenu) {
+                // if(this.cm){
+                //     this.cm.hide()
+                //     this.mode = Mode.None
+                // }
+            }
         }
         
         // right mouse button down
         if (e.buttons === 2) {
+            if(this.cm){
+                this.cm.hide()
+            }
             this.mode = Mode.PendingMove
         }
 
@@ -226,10 +275,13 @@ class NEScene {
             // check if moved
             if (Math.abs((e.layerX - this.canvas.offsetLeft) - this.mousedownpos_screen.x) < 10 &&
             Math.abs((e.layerY - this.canvas.offsetTop) - this.mousedownpos_screen.y) < 10) {
-
+                
                 this.mode = Mode.ContextMenu
-                alert("context menu")
+                // alert("context menu")
+                this.cm.show(this.mousedownpos_screen.x,  this.mousedownpos_screen.y)
                 this.update()
+                e.preventDefault()
+                return
             }
         }
 
@@ -368,52 +420,7 @@ class NEScene {
     keydown(e) {
 
         if (this.mode == Mode.EditText){
-
-            var widget = this.widgets[0]
-            if(e.key === "ArrowLeft"){
-                widget.cursor = Math.max(0, widget.cursor - 1)
-                e.preventDefault()
-                this.update()
-                return
-            }
-
-            if(e.key === "ArrowRight"){
-                widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
-                e.preventDefault()
-                this.update()
-                return
-            }
-
-            if(e.key === "Delete"){
-                var new_cursor = Math.min(widget.value.length, widget.cursor + 1)
-                if(new_cursor !== widget.cursor){
-                    widget.value = widget.value.slice(0, widget.cursor) + widget.value.slice(new_cursor)
-                }
-                e.preventDefault()
-                this.update()
-                return
-            }
-
-            if(e.key === "Backspace") {
-                var new_cursor = Math.max(0, widget.cursor - 1)
-                if(new_cursor !== widget.cursor){
-                    widget.value = widget.value.slice(0, new_cursor) + widget.value.slice(widget.cursor)
-                }
-                widget.cursor = new_cursor
-                e.preventDefault()
-                this.update()
-                return
-            }
-            if(e.keyCode > 64 && e.keyCode < 91 || e.keyCode > 96 && e.keyCode < 123 || e.keyCode > 47 && e.keyCode < 52 || e.keyCode === 32) {
-
-                widget.value = widget.value.slice(0, widget.cursor) + e.key + widget.value.slice(widget.cursor)
-                widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
-                e.preventDefault()
-                this.update()
-            }
-            else{
-                console.log(e.keyCode)
-            }
+           return
         }
 
         else {
@@ -439,10 +446,11 @@ class NEScene {
     
             // S -> Serialize
             if(e.keyCode == 83) {
-                // this.serialize()
-                this.mode = Mode.EditText
-                this.widgets[0].focus()
-                this.update()
+                this.serialize()
+            }
+
+            if(e.key === "e"){
+                this.execute()
             }
         }
     }
@@ -479,7 +487,7 @@ class NEScene {
         this.update()
 
         // var test_str = '{"nodes":[{"id":0,"title":"MyNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":17,"y":270},{"id":1,"title":"TestNode","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[{"node":2,"port":0}],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":false,"can_be_selected":true,"can_be_moved":true,"x":107,"y":59},{"id":2,"title":"ABC","ports":[{"id":0,"type":1,"output":false,"connections":[],"x":20,"y":44},{"id":1,"type":1,"output":true,"connections":[],"x":228,"y":44},{"id":2,"type":2,"output":true,"connections":[],"x":228,"y":80}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":200}]}'
-        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":606,"y":47},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":83,"y":152},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":1,"output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":0,"output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":0,"output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":1,"output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":1,"output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":328,"y":78}]} '
+        var test_str = '{"nodes":[{"className":"NEExecutionStart","id":0,"title":"Start","ports":[{"className":"NEExecutionPort","id":0,"type":"exec","output":true,"connections":[{"node":4,"port":0}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":0,"y":50},{"className":"NEExecutionEnd","id":1,"title":"End","ports":[{"className":"NEExecutionPort","id":0,"type":"exec","output":false,"connections":[],"x":20,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":600,"y":50},{"className":"NENumberLiteral","id":2,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":"float","output":true,"connections":[{"node":4,"port":2}],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":150},{"className":"NENumberLiteral","id":3,"title":"NumberLiteral","ports":[{"className":"NEPort","id":0,"type":"float","output":true,"connections":[],"x":124,"y":44}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":80,"y":260},{"className":"NECalcSum","id":4,"title":"CalcSum","ports":[{"className":"NEExecutionPort","id":0,"type":"exec","output":false,"connections":[],"x":26,"y":44},{"className":"NEExecutionPort","id":1,"type":"exec","output":true,"connections":[{"node":1,"port":0}],"x":144,"y":44},{"className":"NEPort","id":2,"type":"float","output":false,"connections":[],"x":26,"y":68},{"className":"NEPort","id":3,"type":"float","output":false,"connections":[{"node":3,"port":0}],"x":26,"y":92}],"can_be_deleted":true,"can_be_selected":true,"can_be_moved":true,"x":311,"y":80}]}'
 
         var obj = JSON.parse(test_str)
         for (var i = 0; i < obj.nodes.length; i++){
@@ -503,5 +511,15 @@ class NEScene {
         }
 
         this.update()
+    }
+
+    execute() {
+        for(const [id, node] of Object.entries(this.nodes)) {
+            // if(node.className === "NEExecutionStart")
+            if(node.className === "NECalcSum")
+            {
+                node.execute()
+            }
+        }
     }
 }

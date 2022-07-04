@@ -1,7 +1,7 @@
 class NEExecutionPort extends NEPort {
     constructor(scene, node, output){
-        super(scene, node, 0, output)
-        this.type = 0
+        super(scene, node, "exec", output)
+        this.type = "exec"
         this.graphics_port = new NEGraphicsExecutionPort(scene, this)
 
         this.multiple_outputs = !output
@@ -23,11 +23,11 @@ class NEGraphicsExecutionPort extends NEGraphicsPort {
         ctx.closePath()
         ctx.fillStyle = '#444444FF';
         if (this.port.connected){
-            ctx.fillStyle = Colors[this.port.type] + "FF"
+            ctx.fillStyle = PortTypes[this.port.type] + "FF"
         }
         ctx.fill();
         ctx.lineWidth = 3;
-        ctx.strokeStyle = Colors[this.port.type]
+        ctx.strokeStyle = PortTypes[this.port.type]
         ctx.stroke();
     }
 }
@@ -42,11 +42,8 @@ class NEExecutionStart extends NENode {
         this.graphics_node.title_gradient_2 = '#FF441144'
 
         this.graphics_node.width = 140
-        this.graphics_node.height = 80
 
         var output = new NEExecutionPort(this.scene, this, true)
-        output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - output.graphics_port.radius * 6
-        output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
         this.addPort(output)
     }
 }
@@ -61,11 +58,8 @@ class NEExecutionEnd extends NENode {
         this.graphics_node.title_gradient_2 = '#FF441144'
 
         this.graphics_node.width = 140
-        this.graphics_node.height = 80
 
         var input = new NEExecutionPort(this.scene, this, false)
-        input.graphics_port.x_offset = this.graphics_node.x
-        input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
         this.addPort(input)
     }
 } 
@@ -82,9 +76,7 @@ class NENumberLiteral extends NENode {
         this.graphics_node.width = 140
         this.graphics_node.height = 80
 
-        var output = new NEPort(this.scene, this, 1, true)
-        output.graphics_port.x_offset = this.graphics_node.x + this.graphics_node.width - output.graphics_port.radius * 6
-        output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
+        var output = new NEPort(this.scene, this, "float", true)
         this.addPort(output)
     }
 }
@@ -99,26 +91,69 @@ class NECalcSum extends NENode {
         this.graphics_node.title_gradient_2 = '#3333AA44'
 
         this.graphics_node.width = 160
-        this.graphics_node.height = 120
 
         var exec_input = new NEExecutionPort(this.scene, this, false)
-        exec_input.graphics_port.x_offset = this.graphics_node.x + exec_input.graphics_port.radius
-        exec_input.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
         this.addPort(exec_input)
 
         var exec_output = new NEExecutionPort(this.scene, this, true)
-        exec_output.graphics_port.x_offset = this.graphics_node.x +this.graphics_node.width - exec_input.graphics_port.radius * 6
-        exec_output.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height
         this.addPort(exec_output)
 
-        var number_1 = new NEPort(this.scene, this, 1, false)
-        number_1.graphics_port.x_offset = this.graphics_node.x + number_1.graphics_port.radius
-        number_1.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 2
+        var number_1 = new NEPort(this.scene, this, "float", false)
         this.addPort(number_1)
 
-        var number_2 = new NEPort(this.scene, this, 1, false)
-        number_2.graphics_port.x_offset = this.graphics_node.x + number_1.graphics_port.radius
-        number_2.graphics_port.y_offset = this.graphics_node.y + this.graphics_node.title_height * 3
+        var number_2 = new NEPort(this.scene, this, "float", false)
         this.addPort(number_2)
+    }
+
+    execute() {
+        var result = 0.0
+        var a = 0.0
+        var b = 0.0
+        if(this.ports[2].connected){
+            var con = this.ports[2].connections[0]
+            if(con.port1 === this.ports[2]){
+                a = parseFloat(con.port2.node.widgets[0].value)
+            } else {
+                a = parseFloat(con.port1.node.widgets[0].value)
+            }
+        } else {
+            a = parseFloat(this.widgets[2].value)
+        }
+
+        if(this.ports[3].connected){
+            var con = this.ports[3].connections[0]
+            if(con.port1 === this.ports[3]){
+                b = parseFloat(con.port2.node.widgets[0].value)
+            } else {
+                b = parseFloat(con.port1.node.widgets[0].value)
+            }
+        }
+        else {
+            b = parseFloat(this.widgets[3].value)
+        }
+        result = a + b
+        console.log(result)
+    }
+}
+
+class NETest extends NENode {
+    constructor(scene){
+        super(scene)
+
+        this.title = "Test"
+
+        this.graphics_node.title_gradient_1 = '#3333AAAA'
+        this.graphics_node.title_gradient_2 = '#3333AA44'
+
+        this.graphics_node.width = 160
+
+
+        this.addPort(new NEExecutionPort(this.scene, this, true))
+
+        this.addPort(new NEPort(this.scene, this, "bool", true))
+        this.addPort(new NEPort(this.scene, this, "int", true))
+        this.addPort(new NEPort(this.scene, this, "float", true))
+        this.addPort(new NEPort(this.scene, this, "string", true))
+        this.addPort(new NEPort(this.scene, this, "object", true))
     }
 }

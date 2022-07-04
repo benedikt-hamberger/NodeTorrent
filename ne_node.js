@@ -5,30 +5,83 @@ class NENode {
         this.id = 0
 
         this.ports = new Map()
+        this.widgets = new Map()
+
+        this.slot_height = 40
+        this.execution_ports = 0
 
         this.graphics_node = new NEGraphicsNode(scene, this, 20, 20)
 
         this.can_be_deleted = true
         this.can_be_moved = true
         this.can_be_selected = true
+
+
     }
 
     addPort(port){
-        var inserted = false
+        if(port.type === "exec"){
+            this.execution_ports++
+        }
+        var j = 0
         for (var i = 0; i < Object.entries(this.ports).length; i++){
             if(!i in this.ports){
-                inserted = true
-                port.id = i
-                this.ports[i] = port
                 break
             }
         }
-        if(!inserted){
-            port.id = i
-            this.ports[i] = port
+        port.id = i
+        this.ports[i] = port
+
+        if(port.type !== 0){
+            j = i
+            if(this.execution_ports > 1){
+                j = i - this.execution_ports + 1
+            }
+            port.graphics_port.y_offset = this.graphics_node.title_height * 2 - 5 + j * this.slot_height
         }
-        // port.graphics_port.move(this.x + port.graphics_port.x_offset, this.y + port.graphics_port.y_offset)
-        // port.graphics_port.move(this.x, this.y)
+        else {
+            port.graphics_port.y_offset = this.graphics_node.title_height * 2
+        }
+
+        if(port.output){
+            port.graphics_port.x_offset = this.graphics_node.width - 20
+        }
+        else{
+            port.graphics_port.x_offset = 20
+        }
+
+        var w = null
+        
+        if(port.type === "bool"){ // bool
+            this.widgets[i] = null
+        }
+
+        if(port.type === "int"){ // int
+            var w = new NETextWidget(this.scene)
+            w.type = "number"
+        }
+
+        if(port.type === "float"){ // float
+            var w = new NETextWidget(this.scene)
+            w.type = "number"
+        }
+
+        if(port.type === "string"){ // string
+            var w = new NETextWidget(this.scene)
+            w.type = "text"
+        }
+
+        if(port.type === "object"){ // object
+            this.widgets[i] = null
+        }
+
+        if(w){
+            this.widgets[i] = w
+            w.graphics_widget.x_offset = port.output? 20 : 40
+            w.graphics_widget.y_offset = 5 + this.graphics_node.title_height + j * this.slot_height
+        }
+
+        this.graphics_node.height = this.graphics_node.title_height + 10.0 + (j + 1) * this.slot_height
     }
 
     select(scene) {
@@ -51,6 +104,12 @@ class NENode {
         for(const [id, port] of Object.entries(this.ports)) {
             port.draw()
         }
+
+        for(const [id, widget] of Object.entries(this.widgets)) {
+            if(widget){
+                widget.draw()
+            }
+        }
     }
 
     delete() {
@@ -71,11 +130,18 @@ class NENode {
             ports_arr.push(port_str)
         }
 
+        var widgets_arr = new Array()
+        for (const [widget_id, widget] of Object.entries(this.widgets)){
+            var widget_str = widget.serialize()
+            widgets_arr.push(widget_str)
+        }
+
         var serialize_str = {
             className: this.constructor.name,
             id: this.id,
             title: this.title,
             ports: ports_arr,
+            widgets: widgets_arr,
             can_be_deleted: this.can_be_deleted,
             can_be_selected: this.can_be_selected,
             can_be_moved: this.can_be_moved,
@@ -92,6 +158,7 @@ class NENode {
         this.can_be_moved = ser_node.can_be_moved
         this.graphics_node.x = ser_node.x
         this.graphics_node.y = ser_node.y
+        this.className = ser_node.className
     }
 }
 
@@ -137,6 +204,13 @@ class NEGraphicsNode {
             for(const [id, port] of Object.entries(this.node.ports)) {
                 port.graphics_port.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
             }
+
+            for(const [id, widget] of Object.entries(this.node.widgets)) {
+                if(widget){
+                    widget.graphics_widget.move(new_x + this.initialselectionpos.x, new_y + this.initialselectionpos.y)
+                }
+            }
+
         }
     }
 

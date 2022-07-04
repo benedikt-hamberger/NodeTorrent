@@ -1,21 +1,17 @@
-
-const Colors = {
-    0: "#FFFFFF",
-    1: "#33AA11",
-    2: "#EE8800",
-    3: "#3333AA"
-}
-
-
 // get canvas and context
 var canvas = document.getElementById("myCanvas")
 var ctx = canvas.getContext("2d")
 
 var scene = new NEScene(canvas, ctx)
 
-scene.widgets.push(new NETextWidget(scene))
+// this.scene.addNode(new NETest(this.scene))
 
 scene.update()
+
+const NodeTypes = {
+    "add" : "NECalcSum",
+    "float" : "NENumberLiteral"
+}
 
 
 // make key down work on scene
@@ -26,6 +22,7 @@ window.onload = function() {
 
     // prevent default right click menu
     canvas.addEventListener('contextmenu', (e) => {e.preventDefault()});
+    document.addEventListener('contextmenu',  (e) => {e.preventDefault()});
 
     document.addEventListener('mousedown', function(event) {
         lastDownTarget = event.target;
