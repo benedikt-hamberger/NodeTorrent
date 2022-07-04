@@ -29,6 +29,24 @@ class NEPort {
             this.connected = true
             other_port.connected = true
             con.graphics_connection.move()
+
+            if(!this.output){
+                var i = Object.keys(this.node.ports).find(key => this.node.ports[key] === this)
+                var w = this.node.widgets[i]
+                if(w){
+                    w.visible = false
+                    w.editable = false
+                }
+            }
+
+            if(!other_port.output){
+                var i = Object.keys(other_port.node.ports).find(key => other_port.node.ports[key] === other_port)
+                var w = other_port.node.widgets[i]
+                if(w){
+                    w.visible = false
+                    w.editable = false
+                }
+            }
         }
 
     }
@@ -83,6 +101,30 @@ class NEPort {
                 }
             }
         }
+    }
+
+    get_other_port(){
+        if(this.connections.length === 1){
+            var con = this.connections[0]
+            if(this === con.port1){
+                return con.port2
+            }
+            return con.port1
+        }
+        return con
+    }
+
+    disconnect(){
+        this.connected = false
+        if(!this.output){
+            var i = Object.keys(this.node.ports).find(key => this.node.ports[key] === this)
+            var w = this.node.widgets[i]
+            if(w){
+                w.visible = true
+                w.editable = true
+            }
+        }
+        this.scene.update()
     }
 }
 

@@ -27,10 +27,10 @@ class NEScene {
         this.curr_scale = 1.0
 
         this.nodes = new Map()
-        this.widgets = new Array()
 
         this.selected_nodes = new Array()
         this.curr_connections = new Array()
+        this.curr_widget = null
 
 
         canvas.onmousedown = (e) => {that.mousedown(e)}
@@ -47,6 +47,12 @@ class NEScene {
         // apply to point:
         return { x :x * imatrix.a + y * imatrix.c + imatrix.e,
                  y :x * imatrix.b + y * imatrix.d + imatrix.f }
+    }
+
+    toScene(x, y){
+        var matrix = this.ctx.getTransform()
+        return { x :x * matrix.a + y * matrix.c + matrix.e,
+                 y :x * matrix.b + y * matrix.d + matrix.f }
     }
 
     addNode(node){
@@ -124,11 +130,6 @@ class NEScene {
             node.draw()
         }
 
-        for(var i = 0; i < this.widgets.length; i++) {
-            var widget = this.widgets[i]
-            widget.draw()
-        }
-
     }
 
     clear_curr_connections() {
@@ -178,7 +179,7 @@ class NEScene {
                                                     }
                                                 }
 
-                                                port.connected = false
+                                                port.disconnect()
                                                 port.connections = new Array()
                                                 
                                                 this.mode = Mode.Connect
@@ -191,6 +192,21 @@ class NEScene {
                                                 this.curr_connections.push(new NEConnection(this, this.mousedownpos_world.x, this.mousedownpos_world.y, port))
                                                 return
                                             }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // check for widgets
+                            for(const [widget_id, widget] of Object.entries(node.widgets)) {
+                                if(widget && widget.visible){
+                                    if (widget.graphics_widget.x < this.mousedownpos_world.x && widget.graphics_widget.x + widget.graphics_widget.width > this.mousedownpos_world.x){
+                                        if (widget.graphics_widget.y < this.mousedownpos_world.y && widget.graphics_widget.y + widget.graphics_widget.height > this.mousedownpos_world.y){
+                                            
+                                            this.mode = Mode.EditText
+                                            widget.focus()
+                                            this.curr_widget = widget
+                                            return
                                         }
                                     }
                                 }
@@ -208,6 +224,12 @@ class NEScene {
                 }
                 else {
                     this.mode = Mode.None
+                }
+            }
+
+            if (this.mode === Mode.EditText) {
+                if(this.curr_widget){
+                    this.curr_widget.unfocus()
                 }
             }
         }
@@ -368,51 +390,7 @@ class NEScene {
     keydown(e) {
 
         if (this.mode == Mode.EditText){
-
-            var widget = this.widgets[0]
-            if(e.key === "ArrowLeft"){
-                widget.cursor = Math.max(0, widget.cursor - 1)
-                e.preventDefault()
-                this.update()
-                return
-            }
-
-            if(e.key === "ArrowRight"){
-                widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
-                e.preventDefault()
-                this.update()
-                return
-            }
-
-            if(e.key === "Delete"){
-                var new_cursor = Math.min(widget.value.length, widget.cursor + 1)
-                if(new_cursor !== widget.cursor){
-                    widget.value = widget.value.slice(0, widget.cursor) + widget.value.slice(new_cursor)
-                }
-                e.preventDefault()
-                this.update()
-                return
-            }
-
-            if(e.key === "Backspace") {
-                var new_cursor = Math.max(0, widget.cursor - 1)
-                if(new_cursor !== widget.cursor){
-                    widget.value = widget.value.slice(0, new_cursor) + widget.value.slice(widget.cursor)
-                }
-                widget.cursor = new_cursor
-                e.preventDefault()
-                this.update()
-                return
-            }
-            if(e.keyCode > 64 && e.keyCode < 91 || e.keyCode > 96 && e.keyCode < 123 || e.keyCode > 47 && e.keyCode < 52){
-
-                widget.value = widget.value.slice(0, widget.cursor) + e.key + widget.value.slice(widget.cursor)
-                widget.cursor = Math.min(widget.value.length, widget.cursor + 1)
-                this.update()
-            }
-            else{
-                console.log(e.keyCode)
-            }
+           return
         }
 
         else {
@@ -439,9 +417,8 @@ class NEScene {
             // S -> Serialize
             if(e.keyCode == 83) {
                 // this.serialize()
-                this.mode = Mode.EditText
-                this.widgets[0].focus()
-                this.update()
+
+                this.execute()
             }
         }
     }
@@ -502,5 +479,15 @@ class NEScene {
         }
 
         this.update()
+    }
+
+    execute() {
+        for(const [id, node] of Object.entries(this.nodes)) {
+            // if(node.className === "NEExecutionStart")
+            if(node.className === "NECalcSum")
+            {
+                node.execute()
+            }
+        }
     }
 }
